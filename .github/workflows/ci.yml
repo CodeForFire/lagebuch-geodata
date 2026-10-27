@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # The publish job in build-pack.yml dispatches this on its manifest branch: a
+  # pull request opened with GITHUB_TOKEN triggers no pull_request workflows,
+  # so the required checks would otherwise never run on it.
+  workflow_dispatch: {}
 
 permissions: {}
 

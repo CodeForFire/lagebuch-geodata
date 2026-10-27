@@ -91,6 +91,7 @@ jobs:
       contents: write # release + manifest branch
       pull-requests: write # manifest pull request
       issues: write # status comment
+      actions: write # dispatch the required checks on the manifest branch
       id-token: write # build provenance attestation
       attestations: write
     env:
@@ -169,6 +170,14 @@ jobs:
               --title "chore: publish $NAME ($TAG)" --body-file pr_body.md)
           fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Run the required checks on the manifest branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.manifest.outputs.branch }}
+        run: |
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
+          gh workflow run zizmor.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
 
       - name: Comment success on issue
         if: env.ISSUE_NUMBER != ''
