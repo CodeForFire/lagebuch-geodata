@@ -100,8 +100,11 @@ jobs:
       RELATION_ID: ${{ inputs.relation_id }}
       ISSUE_NUMBER: ${{ inputs.issue_number }}
     steps:
+      # The manifest is computed from main as it is now, not as it was when the
+      # build started: other packs' manifest PRs may have merged during the build.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: main
           persist-credentials: false
 
       - name: Download pack
