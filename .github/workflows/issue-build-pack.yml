@@ -1,0 +1,102 @@
+name: Build pack from issue
+
+on:
+  issues:
+    types: [labeled]
+
+permissions: {}
+
+jobs:
+  prepare:
+    if: >-
+      github.event.label.name == 'approved' &&
+      (contains(github.event.issue.labels.*.name, 'pack-request') ||
+       contains(github.event.issue.labels.*.name, 'pack-update'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      proceed: ${{ steps.gate.outputs.proceed }}
+      slug: ${{ steps.fields.outputs.slug }}
+      name: ${{ steps.fields.outputs.name }}
+      relation_id: ${{ steps.fields.outputs.relation_id }}
+    steps:
+      - name: Check the labeller has write access
+        id: gate
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              username: context.payload.sender.login,
+            });
+            const allowed = ['admin', 'maintain', 'write'].includes(data.permission);
+            core.setOutput('proceed', allowed ? 'true' : 'false');
+            if (!allowed) {
+              core.warning(`Ignoring 'approved' label from ${context.payload.sender.login} (permission: ${data.permission})`);
+            }
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.proceed == 'true'
+        with:
+          persist-credentials: false
+
+      - name: Determine which template was used
+        id: template
+        if: steps.gate.outputs.proceed == 'true'
+        env:
+          IS_UPDATE: ${{ contains(github.event.issue.labels.*.name, 'pack-update') }}
+        run: |
+          if [ "$IS_UPDATE" = "true" ]; then
+            echo "kind=update" >> "$GITHUB_OUTPUT"
+          else
+            echo "kind=new" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Parse new-pack issue fields
+        id: parse_new
+        if: steps.gate.outputs.proceed == 'true' && steps.template.outputs.kind == 'new'
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          FIELDS_JSON: '[["Display name","name"],["Slug","slug"],["OSM relation ID","relation_id"]]'
+        run: python3 scripts/parse_issue_form.py
+
+      - name: Parse update-pack issue fields
+        id: parse_update
+        if: steps.gate.outputs.proceed == 'true' && steps.template.outputs.kind == 'update'
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          FIELDS_JSON: '[["Existing slug","slug"],["OSM relation ID (optional override)","relation_id"]]'
+        run: python3 scripts/parse_issue_form.py
+
+      - name: Resolve fields to build
+        id: fields
+        if: steps.gate.outputs.proceed == 'true'
+        env:
+          TEMPLATE: ${{ steps.template.outputs.kind }}
+          NEW_SLUG: ${{ steps.parse_new.outputs.slug }}
+          NEW_RELATION_ID: ${{ steps.parse_new.outputs.relation_id }}
+          NEW_NAME: ${{ steps.parse_new.outputs.name }}
+          UPDATE_SLUG: ${{ steps.parse_update.outputs.slug }}
+          UPDATE_RELATION_ID: ${{ steps.parse_update.outputs.relation_id }}
+        run: python3 scripts/resolve_issue_fields.py
+
+  build:
+    needs: prepare
+    if: needs.prepare.outputs.proceed == 'true'
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      attestations: write
+    # Job-level `$/` is not yet documented for reusable workflows, and actionlint rejects it.
+    uses: ./.github/workflows/build-pack.yml # zizmor: ignore[self-repository]
+    with:
+      slug: ${{ needs.prepare.outputs.slug }}
+      name: ${{ needs.prepare.outputs.name }}
+      relation_id: ${{ needs.prepare.outputs.relation_id }}
+      issue_number: ${{ github.event.issue.number }}

@@ -1,0 +1,21 @@
+version: 2
+# Every ecosystem waits seven days before proposing a new release, so a
+# compromised version that is caught and yanked in its first days never reaches
+# a pull request here. Security updates ignore the cooldown.
+updates:
+  # The SHA-pinned GitHub Actions.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+
+  # The digest-pinned GDAL and tile-server base images in docker/. Without this
+  # entry the pins would silently go stale.
+  - package-ecosystem: docker
+    directory: /docker
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
