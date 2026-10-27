@@ -1,0 +1,197 @@
+name: Build pack
+
+on:
+  workflow_call:
+    inputs:
+      slug:
+        description: Short lowercase pack id, e.g. "ffb"
+        type: string
+        required: true
+      name:
+        description: Display name, e.g. "Landkreis Fürstenfeldbruck"
+        type: string
+        required: true
+      relation_id:
+        description: OSM relation ID of the Landkreis boundary
+        type: string
+        required: true
+      issue_number:
+        description: Originating issue, for status comments. Empty for scheduled runs.
+        type: string
+        required: false
+        default: ""
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: Short lowercase pack id, e.g. "ffb"
+        type: string
+        required: true
+      name:
+        description: Display name, e.g. "Landkreis Fürstenfeldbruck"
+        type: string
+        required: true
+      relation_id:
+        description: OSM relation ID of the Landkreis boundary
+        type: string
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: pack-${{ inputs.slug }}
+  cancel-in-progress: false
+
+jobs:
+  # The build downloads and runs third-party data and images, so it gets a
+  # read-only token and hands its output to the publish job as an artifact.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    permissions:
+      contents: read
+    env:
+      SLUG: ${{ inputs.slug }}
+      NAME: ${{ inputs.name }}
+      RELATION_ID: ${{ inputs.relation_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build pack
+        run: |
+          set -o pipefail
+          mkdir -p build
+          bash scripts/run_build.sh 2>&1 | tee build/build_log.txt
+
+      - name: Upload pack
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pack
+          path: |
+            build/*.zip
+            build/pack.json
+            build/area_simple.geojson
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload log
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: build-log
+          path: build/build_log.txt
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # release + manifest branch
+      pull-requests: write # manifest pull request
+      issues: write # status comment
+      id-token: write # build provenance attestation
+      attestations: write
+    env:
+      SLUG: ${{ inputs.slug }}
+      NAME: ${{ inputs.name }}
+      RELATION_ID: ${{ inputs.relation_id }}
+      ISSUE_NUMBER: ${{ inputs.issue_number }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download pack
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: pack
+          path: build
+
+      - name: Update manifest
+        id: manifest
+        run: python3 scripts/manifest.py upsert
+
+      - name: Attest build provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ steps.manifest.outputs.zip }}
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.manifest.outputs.tag }}
+          ZIP: ${{ steps.manifest.outputs.zip }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
+          fi
+          {
+            echo "Built from OSM relation $RELATION_ID."
+            echo
+            echo "- Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL)"
+            echo "- Höhen: DGM5 © Bayerische Vermessungsverwaltung, www.geodaten.bayern.de (CC BY 4.0)"
+            echo
+            echo '```json'
+            cat build/pack.json
+            echo '```'
+          } > release_notes.md
+          gh release create "$TAG" "$ZIP" --repo "$GITHUB_REPOSITORY" \
+            --title "$NAME ($TAG)" --notes-file release_notes.md
+
+      - name: Commit manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.manifest.outputs.branch }}
+          TAG: ${{ steps.manifest.outputs.tag }}
+        run: bash scripts/commit_manifest.sh
+
+      - name: Open pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.manifest.outputs.branch }}
+          TAG: ${{ steps.manifest.outputs.tag }}
+        run: |
+          URL=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --state open --json url --jq '.[0].url // empty')
+          if [ -z "$URL" ]; then
+            {
+              echo "Automated pack build for \`$SLUG\` (OSM relation $RELATION_ID), release \`$TAG\`."
+              echo
+              echo "Merging this publishes the pack to the app."
+              echo
+              echo '```json'
+              cat build/pack.json
+              echo '```'
+            } > pr_body.md
+            URL=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$BRANCH" \
+              --title "chore: publish $NAME ($TAG)" --body-file pr_body.md)
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Comment success on issue
+        if: env.ISSUE_NUMBER != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.manifest.outputs.tag }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "Built \`$TAG\` and opened $PR_URL for review."
+
+  report-failure:
+    needs: [build, publish]
+    if: failure() && inputs.issue_number != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Comment failure on issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          SLUG: ${{ inputs.slug }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "Build failed for \`$SLUG\`. Log: $RUN_URL"

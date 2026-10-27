@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Pack format
+    url: https://github.com/CodeForFire/lagebuch-geodata/blob/main/FORMAT.md
+    about: What a pack contains and how the app reads it.
+  - name: LageBuch app
+    url: https://github.com/CodeForFire/lagebuch/discussions
+    about: Fragen und Rückmeldungen zur App selbst.

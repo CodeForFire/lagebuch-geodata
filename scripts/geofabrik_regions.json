@@ -1,0 +1,15 @@
+{
+  "_comment": "Maps Nominatim address.state and address.state_district to Geofabrik download paths under https://download.geofabrik.de/europe/germany/. Only Bayern is listed, because packs are built only for Bayern (DGM5).",
+  "Bayern": {
+    "slug": "bayern",
+    "districts": {
+      "Oberbayern": "oberbayern",
+      "Niederbayern": "niederbayern",
+      "Oberpfalz": "oberpfalz",
+      "Oberfranken": "oberfranken",
+      "Mittelfranken": "mittelfranken",
+      "Unterfranken": "unterfranken",
+      "Schwaben": "schwaben"
+    }
+  }
+}

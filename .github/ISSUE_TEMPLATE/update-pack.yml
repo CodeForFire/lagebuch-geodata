@@ -1,0 +1,36 @@
+name: Update an existing pack
+description: Rebuild a published pack (fresher OSM or DGM5 data, or a boundary fix).
+title: "[Update pack] "
+labels: ["pack-update"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This rebuilds an existing pack and bumps its version (`ffb-v1` ->
+        `ffb-v2`) once a maintainer adds the `approved` label. Packs also
+        refresh automatically every quarter, so this is for fixes in between.
+  - type: input
+    id: slug
+    attributes:
+      label: Existing slug
+      description: The slug of the pack to rebuild, as it appears in packs.json.
+      placeholder: ffb
+    validations:
+      required: true
+  - type: input
+    id: relation_id
+    attributes:
+      label: OSM relation ID (optional override)
+      description: >-
+        Leave blank to reuse the relation this pack was built from. Set it
+        only if the boundary itself has to change.
+      placeholder: "62595"
+    validations:
+      required: false
+  - type: textarea
+    id: reason
+    attributes:
+      label: Reason for update
+      description: Optional context for the pull request.
+    validations:
+      required: false

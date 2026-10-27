@@ -1,0 +1,48 @@
+name: Scheduled pack refresh
+
+on:
+  schedule:
+    # Quarterly. DGM5 changes in lots ("losweise") and OSM hydrants and
+    # addresses change slowly; an urgent fix goes through the "Update an
+    # existing pack" issue template at any time.
+    - cron: "0 3 1 1,4,7,10 *"
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      has_packs: ${{ steps.matrix.outputs.has_packs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: matrix
+        run: python3 scripts/build_refresh_matrix.py
+
+  refresh:
+    needs: prepare-matrix
+    if: needs.prepare-matrix.outputs.has_packs == 'true'
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      attestations: write
+    # Job-level `$/` is not yet documented for reusable workflows, and actionlint rejects it.
+    uses: ./.github/workflows/build-pack.yml # zizmor: ignore[self-repository]
+    with:
+      slug: ${{ matrix.slug }}
+      name: ${{ matrix.name }}
+      relation_id: ${{ matrix.relation_id }}
+      issue_number: ""

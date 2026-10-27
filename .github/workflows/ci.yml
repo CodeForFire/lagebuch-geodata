@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: shellcheck
+        run: shellcheck scripts/*.sh
+
+      - name: Manifest is valid
+        run: |
+          python3 - <<'PY'
+          import json
+          data = json.load(open("packs.json", encoding="utf-8"))
+          assert data["formatVersion"] == 2, data["formatVersion"]
+          sources = json.load(open("pack-sources.json", encoding="utf-8"))
+          for pack in data["packs"]:
+              assert pack["slug"] in sources, pack["slug"]
+              for key in ("downloadUrl", "sizeBytes", "sha256", "bounds", "boundaryUrl", "version"):
+                  assert key in pack, (pack["slug"], key)
+          print(f"packs.json: {len(data['packs'])} packs")
+          PY
+
+  # Builds the toolbox image so a Dependabot bump of the GDAL base proves it
+  # still has everything the scripts need, before any pack is built with it.
+  toolbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build toolbox and check its tools
+        run: |
+          scripts/toolbox.sh sh -c 'gdalinfo --version && osmium --version | head -1 && zip -v | head -2 && python3 -c "from osgeo import gdal, ogr, osr; print(ogr.GetGEOSVersionMajor())"'
+          scripts/toolbox.sh gdalinfo --formats | grep -E '^ *(COG|XYZ) '

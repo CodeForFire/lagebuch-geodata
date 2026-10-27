@@ -1,0 +1,40 @@
+name: Request a new pack
+description: Request a map and elevation pack for a Landkreis or kreisfreie Stadt in Bayern.
+title: "[New pack] "
+labels: ["pack-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This builds a new pack automatically once a maintainer adds the
+        `approved` label. Packs cover one Landkreis or kreisfreie Stadt
+        (OSM admin_level 6) **in Bayern**: the elevation comes from the
+        Bayerische Vermessungsverwaltung's DGM5, which covers Bayern only.
+  - type: input
+    id: name
+    attributes:
+      label: Display name
+      description: Shown in the app, e.g. "Landkreis Fürstenfeldbruck".
+      placeholder: Landkreis Fürstenfeldbruck
+    validations:
+      required: true
+  - type: input
+    id: slug
+    attributes:
+      label: Slug
+      description: >-
+        Short lowercase id for this pack, used in file and release names
+        (e.g. "ffb", "lk-muenchen"). Lowercase letters, digits and hyphens only.
+      placeholder: ffb
+    validations:
+      required: true
+  - type: input
+    id: relation_id
+    attributes:
+      label: OSM relation ID
+      description: >-
+        The numeric ID of the Kreis's boundary relation on openstreetmap.org
+        (the number after "relation/" in the URL, no "R" prefix).
+      placeholder: "62595"
+    validations:
+      required: true
