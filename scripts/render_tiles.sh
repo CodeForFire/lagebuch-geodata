@@ -44,10 +44,12 @@ for _ in $(seq 1 90); do
   sleep 2
 done
 
-echo "Rendering $(wc -l < "$BUILD/tiles.txt") tiles ..."
-# Without -a, render_list reads "x y z" lines from stdin and renders the
-# metatile holding each of them.
-docker exec -i "$CONTAINER" render_list -n "$NPROC" -f < "$BUILD/tiles.txt"
+# Without -a, render_list reads "x y z" lines from stdin and renders the 8x8
+# metatile holding each of them -- once per line, so a list of single tiles
+# would render the same metatile up to 64 times. Feed it one line per metatile.
+awk '{ print int($1 / 8) * 8, int($2 / 8) * 8, $3 }' "$BUILD/tiles.txt" | sort -u > "$BUILD/metatiles.txt"
+echo "Rendering $(wc -l < "$BUILD/tiles.txt") tiles in $(wc -l < "$BUILD/metatiles.txt") metatiles ..."
+docker exec -i "$CONTAINER" render_list -n "$NPROC" < "$BUILD/metatiles.txt"
 
 echo "Fetching tiles into $TILES_DIR ..."
 while read -r x y z; do
