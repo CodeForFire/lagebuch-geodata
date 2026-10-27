@@ -50,8 +50,9 @@ verifiable with `gh attestation verify <zip> --repo CodeForFire/lagebuch-geodata
 
 ## The pack: `<slug>-v<version>.zip`
 
-The zip holds exactly these six files at its root, no folders and nothing else.
-An app rejects a zip with any other entry.
+The zip holds exactly these seven files at its root, no folders and nothing else.
+An app rejects a zip with any other entry. Packs built before `boundary.geojson`
+was added hold the other six; an app reads the area from `boundaryUrl` then.
 
 ### `pack.json`
 
@@ -82,7 +83,8 @@ file, so a pack can be checked after it is unpacked.
     "map.mbtiles": { "bytes": 0, "sha256": "…" },
     "elevation.tif": { "bytes": 0, "sha256": "…" },
     "water.geojson": { "bytes": 0, "sha256": "…" },
-    "addresses.sqlite": { "bytes": 0, "sha256": "…" }
+    "addresses.sqlite": { "bytes": 0, "sha256": "…" },
+    "boundary.geojson": { "bytes": 0, "sha256": "…" }
   }
 }
 ```
@@ -101,6 +103,10 @@ NoData in `elevation.tif`.
 - Zoom `minZoom` to `maxZoom` (11 to 17). Every zoom covers the buffered area,
   not its bounding box: a tile that doesn't touch the area is absent, so it
   should render as empty and not count as an error.
+- **A tile on the area's edge is only partly map.** The OSM data is cut to the
+  area before rendering, so outside it the tile shows empty land. An app that
+  shows two packs at once draws each clipped to its `boundary.geojson`; taking
+  whole tiles from one pack lets its empty margin cover the neighbour's streets.
 - `metadata` holds `name`, `format=png`, `type=baselayer`, `version`,
   `description`, `attribution`, `bounds`, `center`, `minzoom` and `maxzoom`.
   Show `attribution` whenever the map is visible.
@@ -172,6 +178,13 @@ area's centroid as its position. An entrance node and its building with the
 same address collapse into one row, and the node wins. Open the file
 read-only, and bind every query value as a parameter.
 
+### `boundary.geojson`: the pack's area
+
+The Landkreis plus 3 km, as one RFC 7946 Feature in WGS84 whose geometry is a
+`Polygon` or `MultiPolygon`, simplified to ~20 m (a few hundred points, at most
+1 MB). It is the same file `boundaryUrl` serves, and the area inside which
+`map.mbtiles`, `water.geojson` and `addresses.sqlite` are complete.
+
 ## Licences
 
 `ATTRIBUTION.md` in the zip states them for the person using the pack:
@@ -180,6 +193,8 @@ read-only, and bind every query value as a parameter.
   1.0, so attribution is required and share-alike does not apply.
 - `water.geojson`, `addresses.sqlite`: © OpenStreetMap contributors. These are
   derived databases under the ODbL 1.0, so share-alike applies to them.
+- `boundary.geojson`: © OpenStreetMap contributors, ODbL 1.0; the Landkreis
+  boundary, buffered and simplified.
 - `elevation.tif`: DGM5 © Bayerische Vermessungsverwaltung,
   www.geodaten.bayern.de, CC BY 4.0.
 
@@ -196,3 +211,6 @@ following:
 - Packs follow the Landkreis polygon plus 3 km instead of a rectangle.
 - Packs gain zoom levels 16 and 17, `water.geojson`, `addresses.sqlite`,
   `pack.json` and `ATTRIBUTION.md`.
+
+Within version 2, packs later gained `boundary.geojson`. An app at version 2
+accepts a zip with or without it, so this did not raise `formatVersion`.
