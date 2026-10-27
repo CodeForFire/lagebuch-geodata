@@ -14,12 +14,14 @@ manifest cannot disagree with the data.
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 
 MANIFEST = "packs.json"
 SOURCES = "pack-sources.json"
 FORMAT_VERSION = 2
+SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 ATTRIBUTION = (
     "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). "
     "Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
@@ -62,10 +64,13 @@ def sha256(path: str) -> str:
 def upsert(slug: str, relation_id: str, repo: str) -> dict:
     with open(os.path.join("build", "pack.json"), encoding="utf-8") as f:
         pack = json.load(f)
-    if pack["slug"] != slug:
+    # pack.json arrives as an artifact from the build job, which ran third-party
+    # data and images; check what reaches tags, branches and GITHUB_OUTPUT.
+    if not SLUG_RE.match(slug) or pack["slug"] != slug:
         raise SystemExit(f"build/pack.json is for {pack['slug']!r}, not {slug!r}")
-
     version = pack["version"]
+    if not isinstance(version, int) or isinstance(version, bool) or version != next_version(slug):
+        raise SystemExit(f"build/pack.json has version {version!r}, expected {next_version(slug)}")
     tag = f"{slug}-v{version}"
     zip_name = f"{tag}.zip"
     zip_path = os.path.join("build", zip_name)

@@ -66,6 +66,16 @@ class Manifest(unittest.TestCase):
             packs = json.load(f)["packs"]
         self.assertEqual([(p["slug"], p["version"]) for p in packs], [("ffb", 2)])
 
+    def test_a_pack_claiming_another_version_is_refused(self):
+        self.write_build(version=5)
+        with self.assertRaises(SystemExit):
+            manifest.upsert("ffb", "62595", "CodeForFire/lagebuch-geodata")
+
+    def test_a_pack_for_an_unsafe_slug_is_refused(self):
+        self.write_build(slug="ffb\nbranch=main")
+        with self.assertRaises(SystemExit):
+            manifest.upsert("ffb\nbranch=main", "62595", "CodeForFire/lagebuch-geodata")
+
     def test_a_manifest_of_another_format_version_is_refused(self):
         with open("packs.json", "w", encoding="utf-8") as f:
             json.dump({"formatVersion": 1, "packs": []}, f)
