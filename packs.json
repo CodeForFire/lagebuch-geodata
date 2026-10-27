@@ -19,6 +19,25 @@
       "maxZoom": 17,
       "builtAt": "2026-10-27T20:15:49Z",
       "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
+    },
+    {
+      "slug": "sta",
+      "name": "Landkreis Starnberg",
+      "version": 1,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/sta-v1/sta-v1.zip",
+      "sizeBytes": 270800309,
+      "sha256": "9968cab744609384258c7e3195b04c05d72e3cd58a67595f2160b2cdc65f8fe0",
+      "bounds": {
+        "west": 11.088736,
+        "south": 47.792978,
+        "east": 11.473705,
+        "north": 48.163413
+      },
+      "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/sta.geojson",
+      "minZoom": 11,
+      "maxZoom": 17,
+      "builtAt": "2026-10-27T20:39:38Z",
+      "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
     }
   ]
 }
