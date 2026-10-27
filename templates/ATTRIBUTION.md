@@ -18,6 +18,11 @@ Stand der OSM-Daten: {{OSM_TIMESTAMP}}
 https://opendatacommons.org/licenses/odbl/1-0/. Wer sie weitergibt oder verändert
 weitergibt, muss sie ebenfalls unter der ODbL anbieten.
 
+## Gebiet (`boundary.geojson`)
+
+© OpenStreetMap-Mitwirkende, Open Database License (ODbL) 1.0. Die Landkreisgrenze
+aus OpenStreetMap, um 3 km erweitert und vereinfacht.
+
 ## Höhendaten (`elevation.tif`)
 
 Digitales Geländemodell 5 m (DGM5), © Bayerische Vermessungsverwaltung,

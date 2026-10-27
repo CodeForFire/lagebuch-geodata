@@ -23,7 +23,9 @@ gdal.UseExceptions()
 BUILD_DIR = "build"
 PACK_DIR = os.path.join(BUILD_DIR, "pack")
 FORMAT_VERSION = 2
-DATA_FILES = ("map.mbtiles", "elevation.tif", "water.geojson", "addresses.sqlite")
+DATA_FILES = ("map.mbtiles", "elevation.tif", "water.geojson", "addresses.sqlite", "boundary.geojson")
+# The same simplified area the manifest's boundaryUrl serves, so a pack carries its own.
+BOUNDARY_SOURCE = os.path.join(BUILD_DIR, "area_simple.geojson")
 PACK_FILES = DATA_FILES + ("pack.json", "ATTRIBUTION.md")
 TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "templates", "ATTRIBUTION.md")
 
@@ -60,6 +62,7 @@ def main() -> int:
     name = os.environ["NAME"]
     version = int(os.environ["PACK_VERSION"])
 
+    shutil.copyfile(BOUNDARY_SOURCE, os.path.join(PACK_DIR, "boundary.geojson"))
     for leftover in os.listdir(PACK_DIR):
         if leftover not in DATA_FILES:
             os.remove(os.path.join(PACK_DIR, leftover))  # e.g. a GDAL .aux.xml

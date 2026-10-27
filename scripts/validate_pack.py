@@ -23,7 +23,8 @@ gdal.UseExceptions()
 gdal.SetConfigOption("GDAL_PAM_ENABLED", "NO")  # never write .aux.xml next to the file
 
 FORMAT_VERSION = 2
-EXPECTED_FILES = {"map.mbtiles", "elevation.tif", "water.geojson", "addresses.sqlite", "pack.json", "ATTRIBUTION.md"}
+EXPECTED_FILES = {"map.mbtiles", "elevation.tif", "water.geojson", "addresses.sqlite", "boundary.geojson", "pack.json", "ATTRIBUTION.md"}
+MAX_BOUNDARY_BYTES = 1024 * 1024  # the app refuses a larger one
 DATA_FILES = EXPECTED_FILES - {"pack.json", "ATTRIBUTION.md"}
 WATER_KINDS = {"fire_hydrant", "suction_point", "water_tank", "fire_water_pond"}
 ADDRESS_COLUMNS = ["street", "housenumber", "postcode", "city", "suburb", "lat", "lon", "osm"]
@@ -159,6 +160,24 @@ def check_addresses(path: str, pack: dict) -> None:
     print(f"  {count} addresses")
 
 
+def check_boundary(path: str, pack: dict) -> None:
+    require(os.path.getsize(path) <= MAX_BOUNDARY_BYTES, "boundary.geojson is larger than 1 MB")
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    require(data.get("type") == "Feature", "boundary.geojson is not a Feature")
+    geometry = data["geometry"]
+    require(geometry["type"] in ("Polygon", "MultiPolygon"), f"boundary.geojson holds a {geometry['type']}")
+    polygons = [geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"]
+    points = 0
+    for polygon in polygons:
+        for ring in polygon:
+            require(len(ring) >= 4 and ring[0] == ring[-1], "boundary.geojson has a ring that is not closed")
+            for lon, lat, *_ in ring:
+                require(inside(lon, lat, pack["bounds"]), f"boundary point {lon},{lat} outside bounds")
+            points += len(ring)
+    print(f"  boundary: {points} points")
+
+
 def main() -> int:
     if len(sys.argv) not in (2, 3):
         print(__doc__, file=sys.stderr)
@@ -172,6 +191,7 @@ def main() -> int:
             check_map(os.path.join(out_dir, "map.mbtiles"), pack)
             check_water(os.path.join(out_dir, "water.geojson"), pack)
             check_addresses(os.path.join(out_dir, "addresses.sqlite"), pack)
+            check_boundary(os.path.join(out_dir, "boundary.geojson"), pack)
         except PackError as exc:
             print(f"::error::Pack validation failed: {exc}", file=sys.stderr)
             return 1

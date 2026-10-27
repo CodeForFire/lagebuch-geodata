@@ -7,7 +7,8 @@ fire-brigade incident log, one per Landkreis in Bayern. A pack holds:
 - bare-earth terrain heights from Bayern's DGM5 at 5 m (`elevation.tif`), for
   planning a Wasserförderung over a long distance;
 - hydrants, Saugstellen, Löschwasserbehälter and Löschteiche (`water.geojson`);
-- every address, for finding a location without a network (`addresses.sqlite`).
+- every address, for finding a location without a network (`addresses.sqlite`);
+- the pack's own area, for drawing neighbouring packs as one map (`boundary.geojson`).
 
 Each pack covers its Landkreis's real boundary plus 3 km, so an Einsatz just
 across the border still fits.
