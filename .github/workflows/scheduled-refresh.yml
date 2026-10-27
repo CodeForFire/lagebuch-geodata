@@ -37,6 +37,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      actions: write
       id-token: write
       attestations: write
     # Job-level `$/` is not yet documented for reusable workflows, and actionlint rejects it.
