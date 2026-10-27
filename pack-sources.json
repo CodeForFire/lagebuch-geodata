@@ -1,9 +1,15 @@
 {
+  "aic": {
+    "relationId": "62377"
+  },
   "dah": {
     "relationId": "62556"
   },
   "ffb": {
     "relationId": "62595"
+  },
+  "lkr-muenchen": {
+    "relationId": "62580"
   },
   "ll": {
     "relationId": "62498"
