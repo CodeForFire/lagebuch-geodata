@@ -2,6 +2,25 @@
   "formatVersion": 2,
   "packs": [
     {
+      "slug": "aic",
+      "name": "Landkreis Aichach-Friedberg",
+      "version": 1,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/aic-v1/aic-v1.zip",
+      "sizeBytes": 408963580,
+      "sha256": "c9d8aa9b3b2771ab74ba9f3fac15f0809fed24a886f0d95fa02c515d43c73680",
+      "bounds": {
+        "west": 10.823504,
+        "south": 48.164782,
+        "east": 11.352121,
+        "north": 48.647244
+      },
+      "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/aic.geojson",
+      "minZoom": 11,
+      "maxZoom": 17,
+      "builtAt": "2026-10-27T21:56:16Z",
+      "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
+    },
+    {
       "slug": "dah",
       "name": "Landkreis Dachau",
       "version": 1,
@@ -23,10 +42,10 @@
     {
       "slug": "ffb",
       "name": "Landkreis Fürstenfeldbruck",
-      "version": 2,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ffb-v2/ffb-v2.zip",
-      "sizeBytes": 264982775,
-      "sha256": "b91387a1f0504506f7c8d9a7924616a05121739960e41f5cff56cee33462c617",
+      "version": 1,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ffb-v1/ffb-v1.zip",
+      "sizeBytes": 264978779,
+      "sha256": "138a8f4a7e97a9d7d71390c645dac8ce5afbfe52cbcd6dbdc70fa14d8964a907",
       "bounds": {
         "west": 10.952684,
         "south": 48.06073,
@@ -36,7 +55,26 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/ffb.geojson",
       "minZoom": 11,
       "maxZoom": 17,
-      "builtAt": "2026-10-27T22:06:06Z",
+      "builtAt": "2026-10-27T20:15:49Z",
+      "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
+    },
+    {
+      "slug": "lkr-muenchen",
+      "name": "Landkreis München",
+      "version": 1,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/lkr-muenchen-v1/lkr-muenchen-v1.zip",
+      "sizeBytes": 498991771,
+      "sha256": "a8a17f9e54ed78c3df2b0a7db6c2d3c2262ed0799efec2079377402f5b816df0",
+      "bounds": {
+        "west": 11.344863,
+        "south": 47.888955,
+        "east": 11.892231,
+        "north": 48.326157
+      },
+      "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/lkr-muenchen.geojson",
+      "minZoom": 11,
+      "maxZoom": 17,
+      "builtAt": "2026-10-27T22:21:42Z",
       "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
     },
     {
