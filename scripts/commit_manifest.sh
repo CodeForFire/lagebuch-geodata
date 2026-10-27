@@ -37,4 +37,8 @@ print(json.dumps({"query": query, "variables": {"input": {
 }}}))
 PY
 
-gh api graphql --input build/commit.json --jq .data.createCommitOnBranch.commit.oid
+SHA="$(gh api graphql --input build/commit.json --jq .data.createCommitOnBranch.commit.oid)"
+echo "Committed $SHA"
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+fi

@@ -142,6 +142,7 @@ jobs:
             --title "$NAME ($TAG)" --notes-file release_notes.md
 
       - name: Commit manifest
+        id: commit
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCH: ${{ steps.manifest.outputs.branch }}
@@ -181,11 +182,15 @@ jobs:
       - name: Start the manifest PR's checks
         env:
           GH_TOKEN: ${{ github.token }}
-          BRANCH: ${{ steps.manifest.outputs.branch }}
+          SHA: ${{ steps.commit.outputs.sha }}
         run: |
+          # Select runs by the exact commit this job created, and only from this
+          # repository: matching on the branch name alone would also pick up a
+          # fork's pull request from a branch named pack/..., whose untrusted
+          # code the approval gate exists to hold back.
           for _ in $(seq 1 12); do
-            ids=$(gh run list --repo "$GITHUB_REPOSITORY" --branch "$BRANCH" --event pull_request \
-              --json databaseId,conclusion --jq '.[] | select(.conclusion == "action_required") | .databaseId')
+            ids=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$SHA&event=pull_request" \
+              --jq ".workflow_runs[] | select(.conclusion == \"action_required\" and .head_repository.full_name == \"$GITHUB_REPOSITORY\") | .id")
             [ -n "$ids" ] && break
             sleep 10
           done
