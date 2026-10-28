@@ -23,10 +23,10 @@
     {
       "slug": "dah",
       "name": "Landkreis Dachau",
-      "version": 2,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/dah-v2/dah-v2.zip",
-      "sizeBytes": 316900637,
-      "sha256": "d5989932b7b1de296662c7af7ecf832d4a7de2f2a9461e51035f213c7700af7b",
+      "version": 3,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/dah-v3/dah-v3.zip",
+      "sizeBytes": 334813886,
+      "sha256": "3a89edc679e6accb180086a1e9b643c5b72c520b3641c97c8fe75612e022c39c",
       "bounds": {
         "west": 11.069461,
         "south": 48.174158,
@@ -36,7 +36,7 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/dah.geojson",
       "minZoom": 11,
       "maxZoom": 17,
-      "builtAt": "2026-10-28T09:21:50Z",
+      "builtAt": "2026-10-28T15:37:10Z",
       "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
     },
     {
