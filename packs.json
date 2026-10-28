@@ -4,10 +4,10 @@
     {
       "slug": "aic",
       "name": "Landkreis Aichach-Friedberg",
-      "version": 1,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/aic-v1/aic-v1.zip",
-      "sizeBytes": 408963580,
-      "sha256": "c9d8aa9b3b2771ab74ba9f3fac15f0809fed24a886f0d95fa02c515d43c73680",
+      "version": 2,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/aic-v2/aic-v2.zip",
+      "sizeBytes": 408968777,
+      "sha256": "4906f1ffb48970b92c675a234b2d1b7a4aa7ba8e108e75add636c8de6fa333e1",
       "bounds": {
         "west": 10.823504,
         "south": 48.164782,
@@ -17,7 +17,7 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/aic.geojson",
       "minZoom": 11,
       "maxZoom": 17,
-      "builtAt": "2026-10-27T21:56:16Z",
+      "builtAt": "2026-10-28T11:04:14Z",
       "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
     },
     {
