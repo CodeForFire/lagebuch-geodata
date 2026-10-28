@@ -11,9 +11,9 @@ Share-Alike gilt für die Kacheln nicht.
 
 Stand der OSM-Daten: {{OSM_TIMESTAMP}}
 
-## Wasserentnahmestellen (`water.geojson`) und Adressen (`addresses.sqlite`)
+## Vektorkarte (`map.pmtiles`), Wasserentnahmestellen (`water.geojson`) und Adressen (`addresses.sqlite`)
 
-© OpenStreetMap-Mitwirkende. Beide Dateien sind aus OpenStreetMap abgeleitete
+© OpenStreetMap-Mitwirkende. Alle drei Dateien sind aus OpenStreetMap abgeleitete
 **Datenbanken** und stehen unter der Open Database License (ODbL) 1.0,
 https://opendatacommons.org/licenses/odbl/1-0/. Wer sie weitergibt oder verändert
 weitergibt, muss sie ebenfalls unter der ODbL anbieten.

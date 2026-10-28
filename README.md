@@ -4,6 +4,8 @@ Offline map packs for the [LageBuch](https://github.com/CodeForFire/lagebuch)
 fire-brigade incident log, one per Landkreis in Bayern. A pack holds:
 
 - an OpenStreetMap base map, zoom 11–17 (`map.mbtiles`);
+- the same map as vector tiles, zoom 0–15 and about a fifteenth of the size,
+  for an app that draws the map itself (`map.pmtiles`);
 - bare-earth terrain heights from Bayern's DGM5 at 5 m (`elevation.tif`), for
   planning a Wasserförderung over a long distance;
 - hydrants, Saugstellen, Löschwasserbehälter and Löschteiche (`water.geojson`);
@@ -14,8 +16,8 @@ Each pack covers its Landkreis's real boundary plus 3 km, so an Einsatz just
 across the border still fits.
 
 **[FORMAT.md](FORMAT.md)** is the contract the app reads, and documents every
-file. All of them are open standards (MBTiles, Cloud Optimized GeoTIFF,
-GeoJSON, SQLite) that QGIS opens as they are.
+file. All of them are open standards (MBTiles, PMTiles, Cloud Optimized
+GeoTIFF, GeoJSON, SQLite) that QGIS opens as they are.
 
 The app fetches [`packs.json`](packs.json). Each entry points at a GitHub
 Release asset and carries its SHA-256, and every release has a build provenance
@@ -51,10 +53,18 @@ SLUG=ffb NAME="Landkreis Fürstenfeldbruck" RELATION_ID=62595 scripts/run_build.
    without resampling.
 3. **OSM.** The Geofabrik extract is clipped to the area with osmium.
    Water points and addresses are exported from it.
-4. **Map.** OSM Carto tiles are rendered with the pinned
+4. **Vector map.** [Planetiler](https://github.com/onthegomap/planetiler) builds
+   PMTiles with the Protomaps basemap profile, compiled from a pinned commit
+   and patched to keep German as the only translated name
+   ([`docker/vector-tiles.Dockerfile`](docker/vector-tiles.Dockerfile)). The
+   profile also reads worldwide sources: Natural Earth, OSM's land and water
+   polygons, and landcover. They are downloaded (2.4 GB, cached for a month
+   in CI) and cut to the area before Planetiler sees them, and every geometry
+   is cut to the area exactly.
+5. **Raster map.** OSM Carto tiles are rendered with the pinned
    `overv/openstreetmap-tile-server`, for every tile that touches the area,
    and packed into MBTiles.
-5. **Check.** [`scripts/validate_pack.py`](scripts/validate_pack.py) checks
+6. **Check.** [`scripts/validate_pack.py`](scripts/validate_pack.py) checks
    every file against FORMAT.md. That includes comparing the elevation with
    DGM5's own values at a few thousand sampled cells. A pack that fails is never released.
 
@@ -63,8 +73,9 @@ SLUG=ffb NAME="Landkreis Fürstenfeldbruck" RELATION_ID=62595 scripts/run_build.
 - Code in this repository: [MIT](LICENSE).
 - Map tiles: © [OpenStreetMap](https://www.openstreetmap.org/copyright)
   contributors, ODbL 1.0, as a Produced Work.
-- `water.geojson`, `addresses.sqlite`: © OpenStreetMap contributors. These are
-  derived databases under the ODbL 1.0, so share-alike applies.
+- `map.pmtiles`, `water.geojson`, `addresses.sqlite`: © OpenStreetMap
+  contributors. These are derived databases under the ODbL 1.0, so
+  share-alike applies.
 - Elevation: DGM5 © Bayerische Vermessungsverwaltung,
   [www.geodaten.bayern.de](https://geodaten.bayern.de/opengeodata/), CC BY 4.0.
 

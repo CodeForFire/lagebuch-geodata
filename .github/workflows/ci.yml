@@ -59,3 +59,20 @@ jobs:
         run: |
           scripts/toolbox.sh sh -c 'gdalinfo --version && osmium --version | head -1 && zip -v | head -2 && python3 -c "from osgeo import gdal, ogr, osr; print(ogr.GetGEOSVersionMajor())"'
           scripts/toolbox.sh gdalinfo --formats | grep -E '^ *(COG|XYZ) '
+
+  # Builds the vector tiles image the same way, so a Dependabot bump of the
+  # Maven or JRE base, or a profile bump whose code no longer takes the
+  # German-only patch, fails here instead of in a pack build.
+  vector-tiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the vector tiles image and run the profile
+        run: |
+          docker build -t lagebuch-geodata-vector-tiles:ci -f docker/vector-tiles.Dockerfile docker
+          docker run --rm lagebuch-geodata-vector-tiles:ci --help | grep -E '^Protomaps Basemap v[0-9]'

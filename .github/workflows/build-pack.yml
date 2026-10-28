@@ -58,6 +58,36 @@ jobs:
         with:
           persist-credentials: false
 
+      # The vector tile profile's worldwide sources (2.4 GB: Natural Earth,
+      # OSM land and water polygons, landcover) change slowly, so every pack
+      # built in a month shares one download. The key also hashes the fetch
+      # script, so a changed source list starts a fresh cache. They are saved
+      # before the build, because run_build.sh deletes them halfway through
+      # to free disk for the raster render.
+      - name: Vector source cache key
+        id: vector-key
+        run: echo "key=vector-sources-$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore vector sources
+        id: vector-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/vector-sources/raw
+          key: ${{ steps.vector-key.outputs.key }}-${{ hashFiles('scripts/fetch_vector_sources.sh') }}
+
+      - name: Fetch vector sources
+        if: steps.vector-cache.outputs.cache-hit != 'true'
+        run: bash scripts/fetch_vector_sources.sh
+
+      # A pack built in parallel may have saved the same key first; losing that
+      # race only logs a warning.
+      - name: Save vector sources
+        if: steps.vector-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/vector-sources/raw
+          key: ${{ steps.vector-cache.outputs.cache-primary-key }}
+
       - name: Build pack
         run: |
           set -o pipefail
