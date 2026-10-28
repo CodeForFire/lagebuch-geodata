@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build one pack end to end: boundary -> buffer -> DGM5 -> OSM layers -> tiles
-# -> MBTiles -> pack.json + zip -> validation. Expects SLUG, NAME and
+# Build one pack end to end: boundary -> buffer -> DGM5 -> OSM layers ->
+# vector tiles -> raster tiles -> MBTiles -> pack.json + zip -> validation. Expects SLUG, NAME and
 # RELATION_ID in the environment (validated first). Produces
 # build/<slug>-v<N>.zip and build/pack.json.
 #
@@ -39,7 +39,14 @@ export OSM_TIMESTAMP
 "$TOOLBOX" bash scripts/build_osm_layers.sh
 rm -f build/state.osm.pbf # free disk before rendering, the tight resource on a runner
 
-echo "== Map tiles =="
+echo "== Vector tiles =="
+bash scripts/fetch_vector_sources.sh
+"$TOOLBOX" bash scripts/clip_vector_sources.sh
+rm -rf build/vector-sources/raw # 2.4 GB of worldwide sources, cut to a few MB above
+bash scripts/build_vector_tiles.sh
+rm -rf build/vector-sources
+
+echo "== Raster tiles =="
 "$TOOLBOX" python3 scripts/tile_list.py
 bash scripts/render_tiles.sh
 "$TOOLBOX" python3 scripts/build_mbtiles.py

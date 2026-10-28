@@ -18,12 +18,14 @@ from datetime import datetime, timezone
 
 from osgeo import gdal
 
+import pmtiles_read
+
 gdal.UseExceptions()
 
 BUILD_DIR = "build"
 PACK_DIR = os.path.join(BUILD_DIR, "pack")
 FORMAT_VERSION = 2
-DATA_FILES = ("map.mbtiles", "elevation.tif", "water.geojson", "addresses.sqlite", "boundary.geojson")
+DATA_FILES = ("map.mbtiles", "map.pmtiles", "elevation.tif", "water.geojson", "addresses.sqlite", "boundary.geojson")
 # The same simplified area the manifest's boundaryUrl serves, so a pack carries its own.
 BOUNDARY_SOURCE = os.path.join(BUILD_DIR, "area_simple.geojson")
 PACK_FILES = DATA_FILES + ("pack.json", "ATTRIBUTION.md")
@@ -41,6 +43,19 @@ def sha256(path: str) -> str:
 def mbtiles_meta(path: str) -> dict:
     with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as conn:
         return dict(conn.execute("SELECT name, value FROM metadata"))
+
+
+def vector_map(path: str) -> dict:
+    """Zoom range and tile schema of map.pmtiles, read from the archive itself."""
+    with open(path, "rb") as f:
+        data = f.read()
+    header = pmtiles_read.read_header(data)
+    return {
+        "minZoom": header["minZoom"],
+        "maxZoom": header["maxZoom"],
+        "schema": "protomaps-basemap",
+        "schemaVersion": pmtiles_read.metadata(data, header)["version"],
+    }
 
 
 def elevation_extent(path: str) -> dict:
@@ -88,6 +103,7 @@ def main() -> int:
         "relationId": region["relationId"],
         "bounds": {"west": west, "south": south, "east": east, "north": north},
         "map": {"minZoom": int(meta["minzoom"]), "maxZoom": int(meta["maxzoom"])},
+        "vectorMap": vector_map(os.path.join(PACK_DIR, "map.pmtiles")),
         "elevation": elevation_extent(os.path.join(PACK_DIR, "elevation.tif")),
         "sources": {
             "osm": {"extractTimestamp": osm_timestamp, "licence": "ODbL-1.0"},
@@ -115,9 +131,9 @@ def main() -> int:
     zip_path = os.path.join(BUILD_DIR, f"{slug}-v{version}.zip")
     if os.path.exists(zip_path):
         os.remove(zip_path)
-    # PNG tiles and the DEFLATE-compressed COG do not shrink further, so store
-    # those and only compress the text and SQLite files.
-    stored = {"map.mbtiles", "elevation.tif"}
+    # PNG tiles, gzipped vector tiles and the DEFLATE-compressed COG do not
+    # shrink further, so store those and only compress the text and SQLite files.
+    stored = {"map.mbtiles", "map.pmtiles", "elevation.tif"}
     with zipfile.ZipFile(zip_path, "w") as archive:
         for f in PACK_FILES:
             archive.write(

@@ -50,7 +50,7 @@ verifiable with `gh attestation verify <zip> --repo CodeForFire/lagebuch-geodata
 
 ## The pack: `<slug>-v<version>.zip`
 
-The zip holds exactly these seven files at its root, no folders and nothing else.
+The zip holds exactly these eight files at its root, no folders and nothing else.
 An app rejects a zip with any other entry, and one that lacks any of them.
 
 ### `pack.json`
@@ -68,6 +68,7 @@ file, so a pack can be checked after it is unpacked.
   "relationId": "62595",
   "bounds": { "west": 10.95268, "south": 48.06073, "east": 11.45318, "north": 48.32370 },
   "map": { "minZoom": 11, "maxZoom": 17 },
+  "vectorMap": { "minZoom": 0, "maxZoom": 15, "schema": "protomaps-basemap", "schemaVersion": "4.15.2" },
   "elevation": {
     "crs": "EPSG:25832+7837",
     "minX": 645160.0, "minY": 5325160.0, "maxX": 682540.0, "maxY": 5354575.0,
@@ -80,6 +81,7 @@ file, so a pack can be checked after it is unpacked.
   },
   "files": {
     "map.mbtiles": { "bytes": 0, "sha256": "…" },
+    "map.pmtiles": { "bytes": 0, "sha256": "…" },
     "elevation.tif": { "bytes": 0, "sha256": "…" },
     "water.geojson": { "bytes": 0, "sha256": "…" },
     "addresses.sqlite": { "bytes": 0, "sha256": "…" },
@@ -109,6 +111,33 @@ NoData in `elevation.tif`.
 - `metadata` holds `name`, `format=png`, `type=baselayer`, `version`,
   `description`, `attribution`, `bounds`, `center`, `minzoom` and `maxzoom`.
   Show `attribution` whenever the map is visible.
+
+### `map.pmtiles`: the base map as vector tiles
+
+The same OSM data as [Mapbox Vector Tiles 2.1](https://github.com/mapbox/vector-tile-spec/tree/master/2.1)
+in a [PMTiles v3](https://github.com/protomaps/PMTiles/blob/main/spec/v3/spec.md)
+archive, for an app that draws the map itself. It is about a fifteenth of
+`map.mbtiles` (Fürstenfeldbruck: 14 MB against 212 MB), because one z15 tile
+holds what the raster pack needs 21 tiles at zoom 15 to 17 for.
+
+- **Schema:** the [Protomaps basemap](https://docs.protomaps.com/basemaps/layers)
+  layers (`earth`, `landcover`, `landuse`, `water`, `roads`, `buildings`,
+  `boundaries`, `places`, `pois`), at the version `vectorMap.schemaVersion`
+  names, which is also the archive's `version` metadata. An app checks the
+  major version before it styles the tiles.
+- **Names:** `name` is OSM's own, and `name:de` is the only translation.
+  Upstream writes ~45 more, which a German app never reads.
+- Zoom `minZoom` to `maxZoom` (0 to 15). Deeper zooms are drawn from the z15
+  tile, scaled up as vectors, not as pixels.
+- **Every geometry is cut to the area exactly.** Unlike a raster edge tile, an
+  edge tile here has nothing outside the area, not empty land, so two packs can
+  be drawn on top of each other without clipping. A tile that doesn't touch the
+  area is absent. The header's `bounds` are the area's bounding box.
+- Tiles and directories are gzipped. Show the metadata's `attribution`
+  whenever the map is visible.
+
+Built with [Planetiler](https://github.com/onthegomap/planetiler) and the
+Protomaps profile at a pinned commit (`docker/vector-tiles.Dockerfile`).
 
 ### `elevation.tif`: terrain heights
 
@@ -182,7 +211,8 @@ read-only, and bind every query value as a parameter.
 The Landkreis plus 3 km, as one RFC 7946 Feature in WGS84 whose geometry is a
 `Polygon` or `MultiPolygon`, simplified to ~20 m (a few hundred points, at most
 1 MB). It is the same file `boundaryUrl` serves, and the area inside which
-`map.mbtiles`, `water.geojson` and `addresses.sqlite` are complete.
+`map.mbtiles`, `map.pmtiles`, `water.geojson` and `addresses.sqlite` are
+complete.
 
 ## Licences
 
@@ -190,8 +220,10 @@ The Landkreis plus 3 km, as one RFC 7946 Feature in WGS84 whose geometry is a
 
 - `map.mbtiles`: © OpenStreetMap contributors. A Produced Work under the ODbL
   1.0, so attribution is required and share-alike does not apply.
-- `water.geojson`, `addresses.sqlite`: © OpenStreetMap contributors. These are
-  derived databases under the ODbL 1.0, so share-alike applies to them.
+- `map.pmtiles`, `water.geojson`, `addresses.sqlite`: © OpenStreetMap
+  contributors. These are derived databases under the ODbL 1.0, so share-alike
+  applies to them. Vector tiles keep the OSM geometry and tags in a form that
+  can be read back out, so they are treated as data, not as a Produced Work.
 - `boundary.geojson`: © OpenStreetMap contributors, ODbL 1.0; the Landkreis
   boundary, buffered and simplified.
 - `elevation.tif`: DGM5 © Bayerische Vermessungsverwaltung,
@@ -215,3 +247,7 @@ Within version 2, packs later gained `boundary.geojson`, and every pack was
 rebuilt with it. An app reads the area from the zip only and refuses a zip
 without it. No released app read version 2 before that, so this did not raise
 `formatVersion`.
+
+For the same reason, packs then gained `map.pmtiles` and `pack.json` gained
+`vectorMap`, again with every pack rebuilt. `map.mbtiles` stays, so an app
+without a vector renderer keeps working on the same packs.

@@ -9,6 +9,7 @@ nothing was shifted or resampled. Exits non-zero on the first broken rule.
 """
 import hashlib
 import json
+import math
 import os
 import random
 import sqlite3
@@ -19,11 +20,13 @@ import zipfile
 
 from osgeo import gdal
 
+import pmtiles_read
+
 gdal.UseExceptions()
 gdal.SetConfigOption("GDAL_PAM_ENABLED", "NO")  # never write .aux.xml next to the file
 
 FORMAT_VERSION = 2
-EXPECTED_FILES = {"map.mbtiles", "elevation.tif", "water.geojson", "addresses.sqlite", "boundary.geojson", "pack.json", "ATTRIBUTION.md"}
+EXPECTED_FILES = {"map.mbtiles", "map.pmtiles", "elevation.tif", "water.geojson", "addresses.sqlite", "boundary.geojson", "pack.json", "ATTRIBUTION.md"}
 MAX_BOUNDARY_BYTES = 1024 * 1024  # the app refuses a larger one
 DATA_FILES = EXPECTED_FILES - {"pack.json", "ATTRIBUTION.md"}
 WATER_KINDS = {"fire_hydrant", "suction_point", "water_tank", "fire_water_pond"}
@@ -33,6 +36,10 @@ CELL = 5.0
 SAMPLE_TILES = 40
 SAMPLES_PER_TILE = 100
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+# Layers every Protomaps basemap tileset has somewhere in an inhabited area.
+VECTOR_LAYERS = {"earth", "landuse", "water", "roads", "buildings", "places"}
+# The only translated name a pack carries (docker/protomaps-names-de.patch).
+VECTOR_NAME_KEYS = {"name:de"}
 
 
 class PackError(Exception):
@@ -129,6 +136,59 @@ def check_map(path: str, pack: dict) -> None:
     require(bad == 0, f"{bad} tiles in map.mbtiles are not PNG")
 
 
+def tile_bounds(z: int, x: int, y: int) -> dict:
+    n = 1 << z
+
+    def lat(row: int) -> float:
+        return math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * row / n))))
+
+    return {"west": x / n * 360 - 180, "east": (x + 1) / n * 360 - 180, "north": lat(y), "south": lat(y + 1)}
+
+
+def overlaps(a: dict, b: dict) -> bool:
+    return a["west"] < b["east"] and b["west"] < a["east"] and a["south"] < b["north"] and b["south"] < a["north"]
+
+
+def check_vector_map(path: str, pack: dict) -> None:
+    with open(path, "rb") as f:
+        data = f.read()
+    try:
+        header = pmtiles_read.read_header(data)
+        require(header["version"] == 3, f"map.pmtiles is PMTiles version {header['version']}, expected 3")
+        require(header["tileType"] == pmtiles_read.TILE_TYPE_MVT, "map.pmtiles does not hold vector tiles")
+        require(header["tileCompression"] == pmtiles_read.COMPRESSION_GZIP, "map.pmtiles tiles are not gzipped")
+        require(header["internalCompression"] == pmtiles_read.COMPRESSION_GZIP, "map.pmtiles directories are not gzipped")
+        vector = pack["vectorMap"]
+        require(
+            (header["minZoom"], header["maxZoom"]) == (vector["minZoom"], vector["maxZoom"]),
+            f"map.pmtiles has zooms {header['minZoom']}-{header['maxZoom']}, pack.json says {vector['minZoom']}-{vector['maxZoom']}",
+        )
+        b = header["bounds"]
+        require(
+            inside(b["west"], b["south"], pack["bounds"], 1e-5) and inside(b["east"], b["north"], pack["bounds"], 1e-5),
+            "map.pmtiles bounds reach outside the pack's bounds",
+        )
+        meta = pmtiles_read.metadata(data, header)
+        require("OpenStreetMap" in meta.get("attribution", ""), "map.pmtiles has no OSM attribution")
+        require(meta.get("version") == vector["schemaVersion"], "map.pmtiles schema version differs from pack.json")
+
+        count, zooms, layers, names = 0, set(), set(), set()
+        for z, x, y, blob in pmtiles_read.tiles(data, header):
+            count += 1
+            zooms.add(z)
+            require(overlaps(tile_bounds(z, x, y), pack["bounds"]), f"map.pmtiles tile {z}/{x}/{y} lies outside the pack")
+            for layer, keys in pmtiles_read.tile_layers(blob).items():
+                layers.add(layer)
+                names.update(k for k in keys if k.startswith("name:"))
+    except pmtiles_read.PmTilesError as exc:
+        raise PackError(f"map.pmtiles: {exc}") from exc
+    require(count == header["addressedTiles"], f"map.pmtiles addresses {header['addressedTiles']} tiles, holds {count}")
+    require(header["maxZoom"] in zooms, "map.pmtiles has no tile at its deepest zoom")
+    require(VECTOR_LAYERS <= layers, f"map.pmtiles lacks layers {sorted(VECTOR_LAYERS - layers)}")
+    require(names <= VECTOR_NAME_KEYS, f"map.pmtiles carries translations {sorted(names - VECTOR_NAME_KEYS)}")
+    print(f"  map.pmtiles: {count} tiles, zoom {header['minZoom']}-{header['maxZoom']}, layers {sorted(layers)}")
+
+
 def check_water(path: str, pack: dict) -> None:
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
@@ -189,6 +249,7 @@ def main() -> int:
             pack = check_zip(zip_path, out_dir)
             check_elevation(os.path.join(out_dir, "elevation.tif"), pack, txt_dir)
             check_map(os.path.join(out_dir, "map.mbtiles"), pack)
+            check_vector_map(os.path.join(out_dir, "map.pmtiles"), pack)
             check_water(os.path.join(out_dir, "water.geojson"), pack)
             check_addresses(os.path.join(out_dir, "addresses.sqlite"), pack)
             check_boundary(os.path.join(out_dir, "boundary.geojson"), pack)
