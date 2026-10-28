@@ -51,8 +51,7 @@ verifiable with `gh attestation verify <zip> --repo CodeForFire/lagebuch-geodata
 ## The pack: `<slug>-v<version>.zip`
 
 The zip holds exactly these seven files at its root, no folders and nothing else.
-An app rejects a zip with any other entry. Packs built before `boundary.geojson`
-was added hold the other six; an app reads the area from `boundaryUrl` then.
+An app rejects a zip with any other entry, and one that lacks any of them.
 
 ### `pack.json`
 
@@ -212,5 +211,7 @@ following:
 - Packs gain zoom levels 16 and 17, `water.geojson`, `addresses.sqlite`,
   `pack.json` and `ATTRIBUTION.md`.
 
-Within version 2, packs later gained `boundary.geojson`. An app at version 2
-accepts a zip with or without it, so this did not raise `formatVersion`.
+Within version 2, packs later gained `boundary.geojson`, and every pack was
+rebuilt with it. An app reads the area from the zip only and refuses a zip
+without it. No released app read version 2 before that, so this did not raise
+`formatVersion`.
