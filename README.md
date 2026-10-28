@@ -58,8 +58,9 @@ SLUG=ffb NAME="Landkreis Fürstenfeldbruck" RELATION_ID=62595 scripts/run_build.
    and patched to keep German as the only translated name
    ([`docker/vector-tiles.Dockerfile`](docker/vector-tiles.Dockerfile)). The
    profile also reads worldwide sources: Natural Earth, OSM's land and water
-   polygons, and landcover. They are downloaded (2.4 GB) and cut to the area
-   before Planetiler sees them, and every geometry is cut to the area exactly.
+   polygons, and landcover. They are downloaded (2.4 GB, cached for a month
+   in CI) and cut to the area before Planetiler sees them, and every geometry
+   is cut to the area exactly.
 5. **Raster map.** OSM Carto tiles are rendered with the pinned
    `overv/openstreetmap-tile-server`, for every tile that touches the area,
    and packed into MBTiles.
