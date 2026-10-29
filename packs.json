@@ -61,20 +61,20 @@
     {
       "slug": "lkr-muenchen",
       "name": "Landkreis München",
-      "version": 2,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/lkr-muenchen-v2/lkr-muenchen-v2.zip",
-      "sizeBytes": 529612437,
-      "sha256": "9bee9fbae781a5f63ad7b3d7b206c298643a3a3539499157430405250fd0f70e",
+      "version": 3,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/lkr-muenchen-v3/lkr-muenchen-v3.zip",
+      "sizeBytes": 119565223,
+      "sha256": "6db46a1722e2204e52692e85be78b2c24cd22c16955ea6c1bcf6e0e194be91a6",
       "bounds": {
-        "west": 11.344863,
-        "south": 47.888955,
+        "west": 11.3448633,
+        "south": 47.8889554,
         "east": 11.892231,
-        "north": 48.326157
+        "north": 48.3261567
       },
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/lkr-muenchen.geojson",
-      "minZoom": 11,
-      "maxZoom": 17,
-      "builtAt": "2026-10-28T16:17:48Z",
+      "minZoom": 0,
+      "maxZoom": 15,
+      "builtAt": "2026-10-29T23:18:52Z",
       "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
     },
     {
