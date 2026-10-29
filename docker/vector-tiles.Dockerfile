@@ -26,7 +26,7 @@ RUN apk add --no-cache patch \
     && mvn -B -q -DskipTests package \
     && cp target/protomaps-basemap-HEAD-with-deps.jar /src/protomaps-basemap.jar
 
-FROM eclipse-temurin:21.0.8_9-jre-alpine@sha256:990397e0495ac088ab6ee3d949a2e97b715a134d8b96c561c5d130b3786a489d
+FROM eclipse-temurin:24.0.2_12-jre-alpine@sha256:4044b6c87cb088885bcd0220f7dc7a8a4aab76577605fa471945d2e98270741f
 COPY --from=build /src/protomaps-basemap.jar /opt/protomaps-basemap.jar
 # The profile reads its sources from ./data/sources, relative to this directory.
 WORKDIR /tiles
