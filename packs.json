@@ -80,20 +80,20 @@
     {
       "slug": "ll",
       "name": "Landkreis Landsberg am Lech",
-      "version": 3,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ll-v3/ll-v3.zip",
-      "sizeBytes": 379586339,
-      "sha256": "cea5d48c10b0a786f619b51b68270993eab53a6916c08c4145be52a8f06e33f7",
+      "version": 4,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ll-v4/ll-v4.zip",
+      "sizeBytes": 99649305,
+      "sha256": "f1cfc0c43a49d228c251b141a94aa676cb65037473c073efb55e320cff490ebf",
       "bounds": {
         "west": 10.708293,
-        "south": 47.81523,
-        "east": 11.210913,
-        "north": 48.264682
+        "south": 47.8152297,
+        "east": 11.2109129,
+        "north": 48.2646821
       },
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/ll.geojson",
-      "minZoom": 11,
-      "maxZoom": 17,
-      "builtAt": "2026-10-28T16:41:22Z",
+      "minZoom": 0,
+      "maxZoom": 15,
+      "builtAt": "2026-10-29T22:55:53Z",
       "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
     },
     {
