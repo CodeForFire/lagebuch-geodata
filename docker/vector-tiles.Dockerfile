@@ -10,7 +10,7 @@
 #
 # To bump: change BASEMAPS_COMMIT and BASEMAPS_SHA256 together
 # (`curl -sL https://codeload.github.com/protomaps/basemaps/tar.gz/<sha> | sha256sum`).
-FROM maven:3.9.11-eclipse-temurin-21-alpine@sha256:922927df2c662cdd47ddb116443d6bec4696cfae3de1a0ddac8fcc7b87ce61ae AS build
+FROM maven:3.9-eclipse-temurin-26-alpine@sha256:4c85d516dd8c7e50d49a403d604e565e0dbb09a790186fe3245725d313ae7cb9 AS build
 
 # protomaps/basemaps main as of 2026-09-11, tiles version 4.15.2.
 ARG BASEMAPS_COMMIT=42ffaaa4a85a41bfcb23e43cc0f5b492a5eca123
