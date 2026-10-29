@@ -95,10 +95,13 @@ jobs:
           mkdir -p build
           bash scripts/run_build.sh 2>&1 | tee build/build_log.txt
 
+      # Named after the pack: a scheduled refresh builds every pack in one run,
+      # and a download by a shared name can hand one pack's publish job
+      # another pack's files.
       - name: Upload pack
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: pack
+          name: pack-${{ inputs.slug }}
           path: |
             build/*.zip
             build/pack.json
@@ -110,7 +113,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: build-log
+          name: build-log-${{ inputs.slug }}
           path: build/build_log.txt
           retention-days: 7
 
@@ -141,7 +144,7 @@ jobs:
       - name: Download pack
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: pack
+          name: pack-${{ inputs.slug }}
           path: build
 
       - name: Update manifest
