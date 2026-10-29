@@ -11,7 +11,6 @@ import hashlib
 import json
 import os
 import shutil
-import sqlite3
 import sys
 import zipfile
 from datetime import datetime, timezone
@@ -25,7 +24,7 @@ gdal.UseExceptions()
 BUILD_DIR = "build"
 PACK_DIR = os.path.join(BUILD_DIR, "pack")
 FORMAT_VERSION = 2
-DATA_FILES = ("map.mbtiles", "map.pmtiles", "elevation.tif", "water.geojson", "addresses.sqlite", "boundary.geojson")
+DATA_FILES = ("map.pmtiles", "elevation.tif", "water.geojson", "addresses.sqlite", "boundary.geojson")
 # The same simplified area the manifest's boundaryUrl serves, so a pack carries its own.
 BOUNDARY_SOURCE = os.path.join(BUILD_DIR, "area_simple.geojson")
 PACK_FILES = DATA_FILES + ("pack.json", "ATTRIBUTION.md")
@@ -40,22 +39,18 @@ def sha256(path: str) -> str:
     return digest.hexdigest()
 
 
-def mbtiles_meta(path: str) -> dict:
-    with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as conn:
-        return dict(conn.execute("SELECT name, value FROM metadata"))
-
-
-def vector_map(path: str) -> dict:
-    """Zoom range and tile schema of map.pmtiles, read from the archive itself."""
+def vector_map(path: str) -> tuple[dict, dict]:
+    """Zoom range and tile schema of map.pmtiles, and its bounds, read from the archive itself."""
     with open(path, "rb") as f:
         data = f.read()
     header = pmtiles_read.read_header(data)
-    return {
+    vector = {
         "minZoom": header["minZoom"],
         "maxZoom": header["maxZoom"],
         "schema": "protomaps-basemap",
         "schemaVersion": pmtiles_read.metadata(data, header)["version"],
     }
+    return vector, header["bounds"]
 
 
 def elevation_extent(path: str) -> dict:
@@ -86,8 +81,8 @@ def main() -> int:
         print(f"::error::Pack is missing {', '.join(missing)}", file=sys.stderr)
         return 1
 
-    meta = mbtiles_meta(os.path.join(PACK_DIR, "map.mbtiles"))
-    west, south, east, north = (float(v) for v in meta["bounds"].split(","))
+    # The archive's bounds are the buffered area's envelope (build_vector_tiles.sh).
+    vector, bounds = vector_map(os.path.join(PACK_DIR, "map.pmtiles"))
     with open(os.path.join(BUILD_DIR, "dgm5.json"), encoding="utf-8") as f:
         dgm5 = json.load(f)
     with open(os.path.join(BUILD_DIR, "region.json"), encoding="utf-8") as f:
@@ -101,9 +96,8 @@ def main() -> int:
         "version": version,
         "builtAt": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "relationId": region["relationId"],
-        "bounds": {"west": west, "south": south, "east": east, "north": north},
-        "map": {"minZoom": int(meta["minzoom"]), "maxZoom": int(meta["maxzoom"])},
-        "vectorMap": vector_map(os.path.join(PACK_DIR, "map.pmtiles")),
+        "bounds": bounds,
+        "vectorMap": vector,
         "elevation": elevation_extent(os.path.join(PACK_DIR, "elevation.tif")),
         "sources": {
             "osm": {"extractTimestamp": osm_timestamp, "licence": "ODbL-1.0"},
@@ -131,9 +125,9 @@ def main() -> int:
     zip_path = os.path.join(BUILD_DIR, f"{slug}-v{version}.zip")
     if os.path.exists(zip_path):
         os.remove(zip_path)
-    # PNG tiles, gzipped vector tiles and the DEFLATE-compressed COG do not
-    # shrink further, so store those and only compress the text and SQLite files.
-    stored = {"map.mbtiles", "map.pmtiles", "elevation.tif"}
+    # Gzipped vector tiles and the DEFLATE-compressed COG do not shrink
+    # further, so store those and only compress the text and SQLite files.
+    stored = {"map.pmtiles", "elevation.tif"}
     with zipfile.ZipFile(zip_path, "w") as archive:
         for f in PACK_FILES:
             archive.write(

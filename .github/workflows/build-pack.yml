@@ -46,7 +46,8 @@ jobs:
   # read-only token and hands its output to the publish job as an artifact.
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    # A Landkreis builds in about 15 minutes; the margin is for a slow DGM5 or Geofabrik.
+    timeout-minutes: 120
     permissions:
       contents: read
     env:
@@ -63,7 +64,7 @@ jobs:
       # built in a month shares one download. The key also hashes the fetch
       # script, so a changed source list starts a fresh cache. They are saved
       # before the build, because run_build.sh deletes them halfway through
-      # to free disk for the raster render.
+      # to free disk.
       - name: Vector source cache key
         id: vector-key
         run: echo "key=vector-sources-$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"

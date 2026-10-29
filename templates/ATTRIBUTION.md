@@ -2,18 +2,12 @@
 
 Dieses Paket wurde für LageBuch gebaut (https://github.com/CodeForFire/lagebuch-geodata).
 
-## Karte (`map.mbtiles`)
+## Karte (`map.pmtiles`), Wasserentnahmestellen (`water.geojson`) und Adressen (`addresses.sqlite`)
 
-Kartendaten © OpenStreetMap-Mitwirkende, https://www.openstreetmap.org/copyright.
-Die Kacheln sind mit dem Stil OpenStreetMap Carto gerendert und ein „Produced Work"
-im Sinne der Open Database License (ODbL) 1.0: Namensnennung ist Pflicht,
-Share-Alike gilt für die Kacheln nicht.
+© OpenStreetMap-Mitwirkende, https://www.openstreetmap.org/copyright. Stand der
+OSM-Daten: {{OSM_TIMESTAMP}}
 
-Stand der OSM-Daten: {{OSM_TIMESTAMP}}
-
-## Vektorkarte (`map.pmtiles`), Wasserentnahmestellen (`water.geojson`) und Adressen (`addresses.sqlite`)
-
-© OpenStreetMap-Mitwirkende. Alle drei Dateien sind aus OpenStreetMap abgeleitete
+Alle drei Dateien sind aus OpenStreetMap abgeleitete
 **Datenbanken** und stehen unter der Open Database License (ODbL) 1.0,
 https://opendatacommons.org/licenses/odbl/1-0/. Wer sie weitergibt oder verändert
 weitergibt, muss sie ebenfalls unter der ODbL anbieten.

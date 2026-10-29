@@ -11,7 +11,7 @@ updates:
     cooldown:
       default-days: 7
 
-  # The digest-pinned GDAL and tile-server base images in docker/. Without this
+  # The digest-pinned GDAL and Planetiler base images in docker/. Without this
   # entry the pins would silently go stale.
   - package-ecosystem: docker
     directory: /docker
