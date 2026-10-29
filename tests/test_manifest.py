@@ -28,7 +28,7 @@ class Manifest(unittest.TestCase):
             "version": version,
             "builtAt": "2026-10-27T20:00:00Z",
             "bounds": {"west": 10.95, "south": 48.06, "east": 11.45, "north": 48.32},
-            "map": {"minZoom": 11, "maxZoom": 17},
+            "vectorMap": {"minZoom": 0, "maxZoom": 15, "schema": "protomaps-basemap", "schemaVersion": "4.15.2"},
         }
         with open("build/pack.json", "w", encoding="utf-8") as f:
             json.dump(pack, f)
@@ -47,6 +47,7 @@ class Manifest(unittest.TestCase):
             (entry,) = json.load(f)["packs"]
         self.assertEqual(result["tag"], "ffb-v1")
         self.assertEqual(entry["bounds"]["north"], 48.32)
+        self.assertEqual((entry["minZoom"], entry["maxZoom"]), (0, 15))
         self.assertEqual(entry["sha256"], hashlib.sha256(b"zip").hexdigest())
         self.assertEqual(entry["sizeBytes"], 3)
         self.assertTrue(entry["downloadUrl"].endswith("/releases/download/ffb-v1/ffb-v1.zip"))

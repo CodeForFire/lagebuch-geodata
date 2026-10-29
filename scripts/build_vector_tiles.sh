@@ -5,7 +5,7 @@
 # sources clip_vector_sources.sh wrote under build/vector-sources/data/sources.
 #
 # Every geometry is cut to the area exactly (--clip-buffer=0), the same area
-# the raster tiles, water points and addresses are complete in.
+# the water points and addresses are complete in.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

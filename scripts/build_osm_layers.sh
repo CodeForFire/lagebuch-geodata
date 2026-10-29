@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Clip the state extract to the buffered area, then export the water points
 # and the addresses. Runs in the toolbox image. Expects build/state.osm.pbf and
-# build/area_4326.geojson; writes build/region.osm.pbf (for the tile renderer),
+# build/area_4326.geojson; writes build/region.osm.pbf (for the vector tiles),
 # build/pack/water.geojson and build/pack/addresses.sqlite.
 set -euo pipefail
 

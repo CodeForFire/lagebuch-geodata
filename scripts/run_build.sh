@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build one pack end to end: boundary -> buffer -> DGM5 -> OSM layers ->
-# vector tiles -> raster tiles -> MBTiles -> pack.json + zip -> validation. Expects SLUG, NAME and
+# vector tiles -> pack.json + zip -> validation. Expects SLUG, NAME and
 # RELATION_ID in the environment (validated first). Produces
 # build/<slug>-v<N>.zip and build/pack.json.
 #
@@ -37,7 +37,7 @@ curl -fsSL --retry 3 "https://download.geofabrik.de/europe/germany/$EXTRACT_PATH
 OSM_TIMESTAMP="$("$TOOLBOX" osmium fileinfo -g header.option.osmosis_replication_timestamp build/state.osm.pbf)"
 export OSM_TIMESTAMP
 "$TOOLBOX" bash scripts/build_osm_layers.sh
-rm -f build/state.osm.pbf # free disk before rendering, the tight resource on a runner
+rm -f build/state.osm.pbf # free disk, the tight resource on a runner
 
 echo "== Vector tiles =="
 bash scripts/fetch_vector_sources.sh
@@ -45,11 +45,6 @@ bash scripts/fetch_vector_sources.sh
 rm -rf build/vector-sources/raw # 2.4 GB of worldwide sources, cut to a few MB above
 bash scripts/build_vector_tiles.sh
 rm -rf build/vector-sources
-
-echo "== Raster tiles =="
-"$TOOLBOX" python3 scripts/tile_list.py
-bash scripts/render_tiles.sh
-"$TOOLBOX" python3 scripts/build_mbtiles.py
 
 echo "== Packaging =="
 "$TOOLBOX" python3 scripts/make_pack_json.py

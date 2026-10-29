@@ -87,8 +87,8 @@ def upsert(slug: str, relation_id: str, repo: str) -> dict:
         "sha256": sha256(zip_path),
         "bounds": pack["bounds"],
         "boundaryUrl": f"https://raw.githubusercontent.com/{repo}/main/boundaries/{slug}.geojson",
-        "minZoom": pack["map"]["minZoom"],
-        "maxZoom": pack["map"]["maxZoom"],
+        "minZoom": pack["vectorMap"]["minZoom"],
+        "maxZoom": pack["vectorMap"]["maxZoom"],
         "builtAt": pack["builtAt"],
         "attribution": ATTRIBUTION,
     }

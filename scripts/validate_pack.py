@@ -26,7 +26,7 @@ gdal.UseExceptions()
 gdal.SetConfigOption("GDAL_PAM_ENABLED", "NO")  # never write .aux.xml next to the file
 
 FORMAT_VERSION = 2
-EXPECTED_FILES = {"map.mbtiles", "map.pmtiles", "elevation.tif", "water.geojson", "addresses.sqlite", "boundary.geojson", "pack.json", "ATTRIBUTION.md"}
+EXPECTED_FILES = {"map.pmtiles", "elevation.tif", "water.geojson", "addresses.sqlite", "boundary.geojson", "pack.json", "ATTRIBUTION.md"}
 MAX_BOUNDARY_BYTES = 1024 * 1024  # the app refuses a larger one
 DATA_FILES = EXPECTED_FILES - {"pack.json", "ATTRIBUTION.md"}
 WATER_KINDS = {"fire_hydrant", "suction_point", "water_tank", "fire_water_pond"}
@@ -35,7 +35,6 @@ NODATA = -9999.0
 CELL = 5.0
 SAMPLE_TILES = 40
 SAMPLES_PER_TILE = 100
-PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 # Layers every Protomaps basemap tileset has somewhere in an inhabited area.
 VECTOR_LAYERS = {"earth", "landuse", "water", "roads", "buildings", "places"}
 # The only translated name a pack carries (docker/protomaps-names-de.patch).
@@ -122,18 +121,6 @@ def check_elevation(path: str, pack: dict, txt_dir: str | None) -> None:
             compared += 1
     require(compared > SAMPLE_TILES * SAMPLES_PER_TILE // 4, f"only {compared} cells could be compared")
     print(f"  elevation matches DGM5 at {compared} sampled cells")
-
-
-def check_map(path: str, pack: dict) -> None:
-    with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as conn:
-        meta = dict(conn.execute("SELECT name, value FROM metadata"))
-        zooms = [z for (z,) in conn.execute("SELECT DISTINCT zoom_level FROM tiles ORDER BY 1")]
-        bad = conn.execute("SELECT COUNT(*) FROM tiles WHERE substr(tile_data, 1, 8) != ?", (PNG_SIGNATURE,)).fetchone()[0]
-    require(meta.get("format") == "png", "map.mbtiles format is not png")
-    require("OpenStreetMap" in meta.get("attribution", ""), "map.mbtiles has no OSM attribution")
-    expected = list(range(pack["map"]["minZoom"], pack["map"]["maxZoom"] + 1))
-    require(zooms == expected, f"map.mbtiles has zooms {zooms}, expected {expected}")
-    require(bad == 0, f"{bad} tiles in map.mbtiles are not PNG")
 
 
 def tile_bounds(z: int, x: int, y: int) -> dict:
@@ -248,7 +235,6 @@ def main() -> int:
         try:
             pack = check_zip(zip_path, out_dir)
             check_elevation(os.path.join(out_dir, "elevation.tif"), pack, txt_dir)
-            check_map(os.path.join(out_dir, "map.mbtiles"), pack)
             check_vector_map(os.path.join(out_dir, "map.pmtiles"), pack)
             check_water(os.path.join(out_dir, "water.geojson"), pack)
             check_addresses(os.path.join(out_dir, "addresses.sqlite"), pack)
