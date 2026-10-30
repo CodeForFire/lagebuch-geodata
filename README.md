@@ -54,7 +54,9 @@ SLUG=ffb NAME="Landkreis Fürstenfeldbruck" RELATION_ID=62595 scripts/run_build.
    Water points and addresses are exported from it.
 4. **Vector map.** [Planetiler](https://github.com/onthegomap/planetiler) builds
    PMTiles with the Protomaps basemap profile, compiled from a pinned commit
-   and patched to keep German as the only translated name
+   and patched to keep German as the only translated name, and to keep the
+   kind of a `social_facility` (Altenheim or Tafel) and the number of a
+   Rettungspunkt
    ([`docker/vector-tiles.Dockerfile`](docker/vector-tiles.Dockerfile)). The
    profile also reads worldwide sources: Natural Earth, OSM's land and water
    polygons, and landcover. They are downloaded (2.4 GB, cached for a month
