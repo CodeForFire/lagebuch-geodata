@@ -118,10 +118,10 @@
     {
       "slug": "sta",
       "name": "Landkreis Starnberg",
-      "version": 4,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/sta-v4/sta-v4.zip",
-      "sizeBytes": 68920811,
-      "sha256": "28bf619e30ae71245e68a9c60c6f42f1302c728b68536bcb376360d5bd6d25e9",
+      "version": 5,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/sta-v5/sta-v5.zip",
+      "sizeBytes": 68924378,
+      "sha256": "f4cb8ebe688b3d387e2ec7c9dec48d861e619311ddd7cd835b2c359a166bf11e",
       "bounds": {
         "west": 11.0887358,
         "south": 47.7929782,
@@ -131,7 +131,7 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/sta.geojson",
       "minZoom": 0,
       "maxZoom": 15,
-      "builtAt": "2026-10-29T23:14:48Z",
+      "builtAt": "2026-10-30T11:32:05Z",
       "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
     }
   ]
