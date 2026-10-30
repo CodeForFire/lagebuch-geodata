@@ -67,7 +67,7 @@ file, so a pack can be checked after it is unpacked.
   "builtAt": "2026-10-27T20:00:00Z",
   "relationId": "62595",
   "bounds": { "west": 10.95268, "south": 48.06073, "east": 11.45318, "north": 48.32370 },
-  "vectorMap": { "minZoom": 0, "maxZoom": 15, "schema": "protomaps-basemap", "schemaVersion": "4.15.2" },
+  "vectorMap": { "minZoom": 0, "maxZoom": 15, "schema": "protomaps-basemap", "schemaVersion": "4.15.2+lagebuch.1" },
   "elevation": {
     "crs": "EPSG:25832+7837",
     "minX": 645160.0, "minY": 5325160.0, "maxX": 682540.0, "maxY": 5354575.0,
@@ -105,9 +105,18 @@ any zoom.
   names, which is also the archive's `version` metadata. An app checks the
   major version before it styles the tiles, and refuses a pack whose major
   version it has no style for. So a new major version of the schema raises
-  `formatVersion`.
+  `formatVersion`. The version is upstream's with `+lagebuch.N` appended
+  (SemVer build metadata), because the profile is patched to add the POI
+  details below. An app compares only the major.
 - **Names:** `name` is OSM's own, and `name:de` is the only translation.
   Upstream writes ~45 more, which a German app never reads.
+- **POI details:** in `pois`, a `kind=social_facility` carries OSM's
+  `social_facility=*` (`nursing_home`, `assisted_living`, `group_home`,
+  `shelter`, `outreach`, `food_bank`, …) as `kind_detail`, so an Altenheim can
+  be told from a Tafel. The value is OSM's as it is, so a list such as
+  `group_home;nursing_home` stays one string. A `kind=emergency_access_point` (Rettungspunkt) carries
+  OSM's `ref`, the number on the sign. Upstream writes neither. Either is
+  absent when OSM has no such tag.
 - Zoom `minZoom` to `maxZoom` (0 to 15). Deeper zooms are drawn from the z15
   tile, scaled up as vectors, not as pixels.
 - **Every geometry is cut to the area exactly.** An edge tile has nothing
@@ -234,3 +243,8 @@ zoom range, and `minZoom`/`maxZoom` in `packs.json` came to describe
 `map.pmtiles`. The raster tiles were about four fifths of every zip
 (Fürstenfeldbruck: 212 of 266 MB), and the app had drawn the vector tiles
 since they arrived. Still no released app read version 2.
+
+Within version 2, `pois` later gained `social_facility` detail and the `ref` of
+Rettungspunkte, and `schemaVersion` the `+lagebuch.1` suffix. Both are additive:
+an app that does not read them draws the map as before, so this did not raise
+`formatVersion`.

@@ -106,6 +106,10 @@ class VectorMap(unittest.TestCase):
     def test_an_archive_built_to_the_contract_passes(self):
         self.check(archive([(z, x, y, mvt()) for z, x, y in INSIDE]))
 
+    def test_the_patched_schema_version_passes_when_pack_json_names_it(self):
+        pack = {**PACK, "vectorMap": {**PACK["vectorMap"], "schemaVersion": "4.15.2+lagebuch.1"}}
+        self.check(archive([(z, x, y, mvt()) for z, x, y in INSIDE], version="4.15.2+lagebuch.1"), pack)
+
     def test_translations_other_than_german_are_refused(self):
         tiles = [(z, x, y, mvt(keys=("kind", "name", "name:de", "name:en"))) for z, x, y in INSIDE]
         self.refuses(archive(tiles), "translations ['name:en']")

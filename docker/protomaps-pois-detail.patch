@@ -1,0 +1,79 @@
+--- a/tiles/src/main/java/com/protomaps/basemap/Basemap.java
++++ b/tiles/src/main/java/com/protomaps/basemap/Basemap.java
+@@ -135,7 +135,7 @@
+ 
+   @Override
+   public String version() {
+-    return "4.15.2";
++    return "4.15.2+lagebuch.1";
+   }
+ 
+   @Override
+--- a/tiles/src/main/java/com/protomaps/basemap/layers/Pois.java
++++ b/tiles/src/main/java/com/protomaps/basemap/layers/Pois.java
+@@ -190,7 +190,11 @@
+ 
+     rule(with("sport"), use("pm:kindDetail", fromTag("sport"))),
+     rule(with("religion"), use("pm:kindDetail", fromTag("religion"))),
+-    rule(with("cuisine"), use("pm:kindDetail", fromTag("cuisine")))
++    rule(with("cuisine"), use("pm:kindDetail", fromTag("cuisine"))),
++
++    // LageBuch: tell an Altenheim or a shelter from a Tafel. Last, so it wins over religion.
++    rule(with("amenity", "social_facility"), with("social_facility"),
++      use("pm:kindDetail", fromTag("social_facility")))
+ 
+   )).index();
+ 
+@@ -554,6 +558,10 @@
+     if (!kindDetail.equals("pm:undefined"))
+       outputFeature.setAttr("kind_detail", kindDetail);
+ 
++    // LageBuch: the number on a Rettungspunkt sign, which a caller reads out
++    if (kind.equals("emergency_access_point"))
++      outputFeature.setAttr("ref", sf.getString("ref"));
++
+     OsmNames.setOsmNames(outputFeature, sf, 0);
+ 
+     // Server sort features so client label collisions are pre-sorted
+--- a/tiles/src/test/java/com/protomaps/basemap/layers/PoisTest.java
++++ b/tiles/src/test/java/com/protomaps/basemap/layers/PoisTest.java
+@@ -496,6 +496,39 @@
+       )));
+   }
+ 
++  @Test
++  void socialFacilityDetail() {
++    assertFeatures(15,
++      List.of(Map.of("kind", "social_facility", "kind_detail", "nursing_home")),
++      process(SimpleFeature.create(
++        newPoint(1, 1),
++        new HashMap<>(Map.of("amenity", "social_facility", "social_facility", "nursing_home", "religion", "christian")),
++        "osm", null, 0
++      )));
++  }
++
++  @Test
++  void emergencyAccessPointRef() {
++    assertFeatures(15,
++      List.of(Map.of("kind", "emergency_access_point", "ref", "FFB-123")),
++      process(SimpleFeature.create(
++        newPoint(1, 1),
++        new HashMap<>(Map.of("highway", "emergency_access_point", "ref", "FFB-123")),
++        "osm", null, 0
++      )));
++  }
++
++  @Test
++  void otherPoiHasNoRef() {
++    assertFeatures(15,
++      List.of(Map.of("kind", "restaurant", "ref", "<null>")),
++      process(SimpleFeature.create(
++        newPoint(1, 1),
++        new HashMap<>(Map.of("amenity", "restaurant", "ref", "7")),
++        "osm", null, 0
++      )));
++  }
++
+   // ========== Area-based zoom overrides ==========
+ 
+   @Test

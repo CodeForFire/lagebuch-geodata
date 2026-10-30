@@ -62,7 +62,8 @@ jobs:
 
   # Builds the vector tiles image the same way, so a Dependabot bump of the
   # Maven or JRE base, or a profile bump whose code no longer takes the
-  # German-only patch, fails here instead of in a pack build.
+  # German-only or the POI detail patch (or breaks the PoisTest cases the
+  # latter adds), fails here instead of in a pack build.
   vector-tiles:
     runs-on: ubuntu-latest
     timeout-minutes: 20
