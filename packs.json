@@ -99,10 +99,10 @@
     {
       "slug": "muenchen",
       "name": "Landeshauptstadt München",
-      "version": 3,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/muenchen-v3/muenchen-v3.zip",
-      "sizeBytes": 76506180,
-      "sha256": "a40e852cf568c786dafc9158621c3eabdcd78335ab7251dc4618617d686257d7",
+      "version": 4,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/muenchen-v4/muenchen-v4.zip",
+      "sizeBytes": 76513343,
+      "sha256": "6fac7c976dcd863a1a589a15ab490ff25efa6e7120a98137de2f5793765139b3",
       "bounds": {
         "west": 11.3204562,
         "south": 48.0346446,
@@ -112,7 +112,7 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/muenchen.geojson",
       "minZoom": 0,
       "maxZoom": 15,
-      "builtAt": "2026-10-29T23:16:09Z",
+      "builtAt": "2026-10-30T11:22:22Z",
       "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
     },
     {
