@@ -40,6 +40,25 @@
       "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
     },
     {
+      "slug": "ed",
+      "name": "Landkreis Erding ",
+      "version": 1,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ed-v1/ed-v1.zip",
+      "sizeBytes": 111480436,
+      "sha256": "ce913c9e6580dbe17008a528bccd45b28770a0346180aa8ba8eaf942b025b843",
+      "bounds": {
+        "west": 11.6907604,
+        "south": 48.1127109,
+        "east": 12.2956896,
+        "north": 48.4817669
+      },
+      "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/ed.geojson",
+      "minZoom": 0,
+      "maxZoom": 15,
+      "builtAt": "2026-11-09T20:21:21Z",
+      "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
+    },
+    {
       "slug": "ffb",
       "name": "Landkreis Fürstenfeldbruck",
       "version": 5,
