@@ -11,7 +11,10 @@ mkdir -p "$RAW"
 
 # fetch NAME URL [FALLBACK_URL ...]: try each URL in turn, so one dead host
 # does not fail the build. --connect-timeout makes an unreachable host fail
-# in seconds instead of curl's ~2 minute default per attempt.
+# in seconds instead of curl's ~2 minute default per attempt; --speed-limit/
+# --speed-time abort a host that connects but then stalls (under 1 KB/s for
+# 2 minutes), which would otherwise hang until the job timeout and never
+# reach the next URL.
 fetch() {
   local name="$1" url
   shift
@@ -21,7 +24,8 @@ fetch() {
   fi
   for url in "$@"; do
     echo "Fetching $name from $url ..."
-    if curl -fsSL --connect-timeout 30 --retry 3 "$url" -o "$RAW/$name.part"; then
+    if curl -fsSL --connect-timeout 30 --speed-limit 1024 --speed-time 120 \
+        --retry 3 "$url" -o "$RAW/$name.part"; then
       mv "$RAW/$name.part" "$RAW/$name"
       return
     fi
