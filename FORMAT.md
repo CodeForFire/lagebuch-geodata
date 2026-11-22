@@ -166,8 +166,14 @@ Properties are restricted to this allowlist; any other tag is dropped:
 
 `emergency`, `fire_hydrant:type`, `fire_hydrant:position`,
 `fire_hydrant:diameter`, `fire_hydrant:pressure`, `couplings`,
-`couplings:type`, `water_source`, `water_tank:volume`, `flow_rate`, `name`,
-`ref`, `operator`, and `osm` (`node/<id>`, `way/<id>` or `relation/<id>`).
+`couplings:type`, `couplings:diameters`, `water_source`, `water_tank:volume`,
+`flow_rate`, `name`, `ref`, `operator`, `access`, `survey:date`,
+`check_date`, and `osm` (`node/<id>`, `way/<id>` or `relation/<id>`).
+
+`couplings:diameters` lists the outlets, `;`-separated, as letters (`B;C`) or
+millimetres (`75;52`). `access` says whether the point stands on private
+ground. `survey:date` and `check_date` say when a mapper last confirmed it on
+site.
 
 Values are the raw OSM strings: units and spellings vary, so parse them
 defensively. **OSM is not the Wasserversorger's register.** A hydrant missing
@@ -248,3 +254,7 @@ Within version 2, `pois` later gained `social_facility` detail and the `ref` of
 Rettungspunkte, and `schemaVersion` the `+lagebuch.1` suffix. Both are additive:
 an app that does not read them draws the map as before, so this did not raise
 `formatVersion`.
+
+Within version 2, `water.geojson` later gained `couplings:diameters`, `access`,
+`survey:date` and `check_date`. They are additive properties that an app which
+does not know them ignores, so this did not raise `formatVersion`.

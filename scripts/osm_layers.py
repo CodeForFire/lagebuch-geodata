@@ -28,12 +28,16 @@ WATER_TAGS = (
     "fire_hydrant:pressure",
     "couplings",
     "couplings:type",
+    "couplings:diameters",
     "water_source",
     "water_tank:volume",
     "flow_rate",
     "name",
     "ref",
     "operator",
+    "access",
+    "survey:date",
+    "check_date",
 )
 DISUSED_VALUES = {"yes", "disused", "abandoned"}
 
