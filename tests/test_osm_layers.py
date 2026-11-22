@@ -78,6 +78,11 @@ class Water(unittest.TestCase):
             feature["properties"], {"emergency": "fire_hydrant", "fire_hydrant:type": "pillar", "osm": "node/1"}
         )
 
+    def test_water_keeps_couplings_access_and_survey_dates(self):
+        tags = {"couplings:diameters": "B;C", "access": "private", "survey:date": "2024-05-12", "check_date": "2025-03-01"}
+        (feature,) = self.build([point(11.0, 48.0, **{"@type": "node", "@id": 1, "emergency": "fire_hydrant", **tags})])
+        self.assertEqual(feature["properties"], {"emergency": "fire_hydrant", **tags, "osm": "node/1"})
+
     def test_water_drops_disused_points(self):
         features = self.build(
             [
