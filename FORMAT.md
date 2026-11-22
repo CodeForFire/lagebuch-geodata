@@ -30,7 +30,12 @@ No authentication, and no GitHub API rate limit.
       "minZoom": 0,
       "maxZoom": 15,
       "builtAt": "2026-10-27T20:00:00Z",
-      "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
+      "attribution": "Karte, Wasserentnahmestellen, Adressen, Straßennetz: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0).",
+      "roads": {
+        "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ffb-v1/ffb-roads-v1.zip",
+        "sizeBytes": 15713535,
+        "sha256": "…64 hex digits…"
+      }
     }
   ]
 }
@@ -44,9 +49,11 @@ No authentication, and no GitHub API rate limit.
 | `bounds` | WGS84 envelope of the buffered pack area, read from the data. |
 | `boundaryUrl` | The buffered area as a GeoJSON Feature (WGS84, simplified to ~20 m), for a "does my route fit?" check. |
 | `minZoom`, `maxZoom` | The zoom levels present in `map.pmtiles`. |
+| `roads` | Optional. The [road graph](#the-road-graph-slug-roads-vversionzip) of the same build, a separate download. `sizeBytes` and `sha256` are of its zip and are held to the same rules as the pack's. Absent for a pack built before road graphs existed. An app that does not route ignores it. |
 
 Every release also carries a [build provenance attestation](https://docs.github.com/actions/security-for-github-actions/using-artifact-attestations),
-verifiable with `gh attestation verify <zip> --repo CodeForFire/lagebuch-geodata`.
+verifiable with `gh attestation verify <zip> --repo CodeForFire/lagebuch-geodata`, for the
+pack and the road graph alike.
 
 ## The pack: `<slug>-v<version>.zip`
 
@@ -210,9 +217,128 @@ The Landkreis plus 3 km, as one RFC 7946 Feature in WGS84 whose geometry is a
 `map.pmtiles`, `water.geojson` and `addresses.sqlite` are
 complete.
 
+## The road graph: `<slug>-roads-v<version>.zip`
+
+The road network as a routable graph, for offline routing from an Einsatzstelle
+to a hydrant: on foot, or by vehicle. It is built from the same OSM extract as
+the pack and attached to the same release, `<slug>-v<version>`. It is **not**
+part of the pack zip, so the seven files above stay exactly as they are. It is
+an optional download, and only an app that routes fetches it.
+
+An app downloads it over https from `roads.downloadUrl` only, caps the download
+at `roads.sizeBytes` and rejects a zip whose SHA-256 differs from `roads.sha256`.
+The build fails when a road graph zip exceeds 60 MB (Fürstenfeldbruck: 16 MB,
+44 MB unpacked).
+
+The zip holds exactly these three files at its root, no folders and nothing
+else. An app rejects a zip with any other entry, and one that lacks any of
+them:
+
+- `roads.json`: like `pack.json`, with `formatVersion`, `slug`, `name`,
+  `version`, `builtAt`, `bounds`, `sources.osm`, the node and edge counts in
+  `graph`, and the size and SHA-256 of `roads.gpkg` in `files`. `slug` and
+  `version` match the pack of the same build.
+- `roads.gpkg`: the graph, described below.
+- `ATTRIBUTION.md`: its source and licence.
+
+### `roads.gpkg`
+
+A [GeoPackage 1.2](https://www.geopackage.org/spec120/), which is SQLite 3. QGIS
+opens it as two layers, and an app reads it with plain SQL, without SpatiaLite.
+Both layers are in EPSG:4326, longitude before latitude, rounded to 7
+decimals.
+
+```sql
+-- POINT. A junction, the end of a way, or a barrier on a way.
+nodes (
+  fid           INTEGER PRIMARY KEY,
+  geom          BLOB,              -- GeoPackage geometry (see below)
+  osm           TEXT NOT NULL,     -- node/<id>
+  barrier       TEXT,              -- OSM's barrier=*, NULL when none
+  drive_blocked INTEGER NOT NULL   -- 1: a vehicle cannot pass this node
+)
+-- LINESTRING. One piece of a way between two nodes, drawn from from_node to to_node.
+edges (
+  fid            INTEGER PRIMARY KEY,
+  geom           BLOB,
+  from_node      INTEGER NOT NULL,  -- nodes.fid
+  to_node        INTEGER NOT NULL,  -- nodes.fid
+  length_m       REAL NOT NULL,     -- along the geometry, in metres
+  highway        TEXT NOT NULL,     -- OSM's highway=*
+  name           TEXT,              -- OSM's name, NULL when untagged
+  osm            TEXT NOT NULL,     -- way/<id>
+  walk_fwd       INTEGER NOT NULL,  -- 1: walkable from from_node to to_node
+  walk_bwd       INTEGER NOT NULL,  -- 1: walkable from to_node to from_node
+  drive_fwd      INTEGER NOT NULL,  -- 1: drivable from from_node to to_node
+  drive_bwd      INTEGER NOT NULL,  -- 1: drivable from to_node to from_node
+  foot_access    TEXT,              -- restriction on foot, NULL when public
+  vehicle_access TEXT               -- restriction for vehicles, NULL when public
+)
+-- The GeoPackage R*Tree of the edges: fid as id, the edge's bounding box.
+rtree_edges_geom (id, minx, maxx, miny, maxy)
+```
+
+**Which ways.** `highway` is one of these:
+- `motorway`, `trunk`, `primary`, `secondary`, `tertiary` and their `_link`s;
+- `unclassified`, `residential`, `living_street`, `service`, `track`, `road`;
+- `pedestrian`, `footway`, `path`, `steps`, `cycleway`, `bridleway`.
+
+A hose is often carried across a yard or along a path, so the footways matter
+as much as the streets. A way that neither mode may use is left out. A way
+becomes one edge between each pair of consecutive nodes, where a node is:
+- one end of a way;
+- a point that two ways share, or that one way passes twice;
+- a barrier.
+
+The graph is complete inside `boundary.geojson`. An edge that crosses the
+boundary runs on to its next node.
+
+**Walking** (`walk_fwd`, `walk_bwd`) covers every included way except
+`motorway`, `motorway_link` and `motorroad=yes`. A way is not walkable when its
+foot access (`foot`, else `access`) is `no`, unless `emergency=yes`. Both
+directions are walkable unless `oneway:foot` says otherwise.
+
+**Driving** (`drive_fwd`, `drive_bwd`) covers the classes from `motorway` to
+`road` above, but no footway, path, steps, cycleway or pedestrian zone. A way
+is not drivable when its vehicle access (`motor_vehicle`, else `vehicle`, else
+`access`) is `no`, unless `emergency=yes`. `oneway=yes` opens only `drive_fwd`,
+and `oneway=-1` only `drive_bwd`. Roundabouts and motorways are oneway unless
+`oneway=no`.
+
+**Restrictions.** Only `no` takes a mode away. Every other value that does not
+open the way to everyone is kept in `foot_access` or `vehicle_access`, for the
+app to show or to avoid. Such values are `private`, `destination`,
+`agricultural`, `forestry`, `delivery` or `customers`, the first of a `;` list.
+Fire services may usually use such ways in an emergency. An edge with
+`vehicle_access = 'no'` that is still drivable is open to emergency vehicles
+only.
+
+**Barriers.** `drive_blocked` is 1 for a `bollard`, `block`, `jersey_barrier`,
+`cycle_barrier`, `kissing_gate`, `stile`, `turnstile`, `chain` or `log`, unless
+the node itself allows vehicles or emergency access. A vehicle route does not
+pass *through* such a node, but it may end there. A `gate` or `lift_gate` is
+recorded in `barrier` and never blocks. No barrier blocks walking.
+
+**Reading it.**
+- *The window around a point:* query the R*Tree and join the edges:
+  ```sql
+  SELECT e.* FROM rtree_edges_geom r JOIN edges e ON e.fid = r.id
+  WHERE r.maxx >= :west AND r.minx <= :east AND r.maxy >= :south AND r.miny <= :north
+  ```
+  2 km around a point in Fürstenfeldbruck is 4,000 to 17,000 edges.
+- *The nearest edge:* use the same query with a small box, then measure the
+  distance to each segment. Neither an Einsatzstelle nor a hydrant lies exactly
+  on a way.
+- *Geometry:* `geom` is a [GeoPackage geometry blob](https://www.geopackage.org/spec120/#gpb_format).
+  It starts with `GP`, a version byte, a flags byte and the 4-byte `srs_id`.
+  Then comes an envelope, whose size the flags give (bits 1–3: 0, 32, 48 or 64
+  bytes), and then standard WKB.
+
+Open the file read-only, and bind every query value as a parameter.
+
 ## Licences
 
-`ATTRIBUTION.md` in the zip states them for the person using the pack:
+`ATTRIBUTION.md` in each zip states them for the person using the files:
 
 - `map.pmtiles`, `water.geojson`, `addresses.sqlite`: © OpenStreetMap
   contributors. These are derived databases under the ODbL 1.0, so share-alike
@@ -220,6 +346,10 @@ complete.
   can be read back out, so they are treated as data, not as a Produced Work.
 - `boundary.geojson`: © OpenStreetMap contributors, ODbL 1.0; the Landkreis
   boundary, buffered and simplified.
+- `roads.gpkg`, in the road graph zip, which carries its own `ATTRIBUTION.md`:
+  © OpenStreetMap contributors, a derived database under the ODbL 1.0, so
+  share-alike applies. A route an app computes and draws from it is a Produced
+  Work. The `attribution` line shown with the map names its source.
 - `elevation.tif`: DGM5 © Bayerische Vermessungsverwaltung,
   www.geodaten.bayern.de, CC BY 4.0.
 
@@ -258,3 +388,9 @@ an app that does not read them draws the map as before, so this did not raise
 Within version 2, `water.geojson` later gained `couplings:diameters`, `access`,
 `survey:date` and `check_date`. They are additive properties that an app which
 does not know them ignores, so this did not raise `formatVersion`.
+
+Within version 2, each release later gained the road graph,
+`<slug>-roads-v<version>.zip`, and `packs.json` the optional `roads` object
+that points to it. The pack zip is unchanged, and an app that does not know
+`roads` ignores it, so this did not raise `formatVersion`. The `attribution`
+line names the road network too.

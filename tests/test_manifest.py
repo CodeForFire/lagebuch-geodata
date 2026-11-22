@@ -20,7 +20,7 @@ class Manifest(unittest.TestCase):
     def tearDown(self):
         os.chdir(self._cwd)
 
-    def write_build(self, slug="ffb", version=1):
+    def write_build(self, slug="ffb", version=1, roads=True):
         pack = {
             "formatVersion": 2,
             "slug": slug,
@@ -34,6 +34,9 @@ class Manifest(unittest.TestCase):
             json.dump(pack, f)
         with open(f"build/{slug}-v{version}.zip", "wb") as f:
             f.write(b"zip")
+        if roads:
+            with open(f"build/{slug}-roads-v{version}.zip", "wb") as f:
+                f.write(b"roads")
         with open("build/area_simple.geojson", "w", encoding="utf-8") as f:
             f.write("{}")
 
@@ -52,6 +55,24 @@ class Manifest(unittest.TestCase):
         self.assertEqual(entry["sizeBytes"], 3)
         self.assertTrue(entry["downloadUrl"].endswith("/releases/download/ffb-v1/ffb-v1.zip"))
         self.assertTrue(os.path.exists("boundaries/ffb.geojson"))
+
+    def test_upsert_lists_the_road_graph_next_to_the_pack(self):
+        self.write_build()
+        result = manifest.upsert("ffb", "62595", "CodeForFire/lagebuch-geodata")
+        with open("packs.json", encoding="utf-8") as f:
+            (entry,) = json.load(f)["packs"]
+        roads = entry["roads"]
+        self.assertTrue(roads["downloadUrl"].endswith("/releases/download/ffb-v1/ffb-roads-v1.zip"))
+        self.assertEqual(roads["sha256"], hashlib.sha256(b"roads").hexdigest())
+        self.assertEqual(roads["sizeBytes"], 5)
+        self.assertEqual(result["roads_zip"], os.path.join("build", "ffb-roads-v1.zip"))
+        self.assertIn("Straßennetz", entry["attribution"])
+        self.assertLessEqual(len(entry["attribution"]), 300)  # the apps' limit for a catalogue text
+
+    def test_a_build_without_its_road_graph_is_refused(self):
+        self.write_build(roads=False)
+        with self.assertRaises(SystemExit):
+            manifest.upsert("ffb", "62595", "CodeForFire/lagebuch-geodata")
 
     def test_the_next_build_of_a_published_slug_gets_the_next_version(self):
         self.write_build()

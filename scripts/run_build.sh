@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Build one pack end to end: boundary -> buffer -> DGM5 -> OSM layers ->
-# vector tiles -> pack.json + zip -> validation. Expects SLUG, NAME and
+# Build one pack end to end: boundary -> buffer -> DGM5 -> OSM layers and
+# road graph -> vector tiles -> pack.json + zips -> validation. Expects SLUG, NAME and
 # RELATION_ID in the environment (validated first). Produces
-# build/<slug>-v<N>.zip and build/pack.json.
+# build/<slug>-v<N>.zip, build/<slug>-roads-v<N>.zip and build/pack.json.
 #
 # Runs locally the way CI runs it; the host needs only bash, curl, python3 and
 # docker. Every geodata tool runs in the pinned toolbox image.
@@ -37,6 +37,7 @@ curl -fsSL --retry 3 "https://download.geofabrik.de/europe/germany/$EXTRACT_PATH
 OSM_TIMESTAMP="$("$TOOLBOX" osmium fileinfo -g header.option.osmosis_replication_timestamp build/state.osm.pbf)"
 export OSM_TIMESTAMP
 "$TOOLBOX" bash scripts/build_osm_layers.sh
+"$TOOLBOX" bash scripts/build_road_graph.sh
 rm -f build/state.osm.pbf # free disk, the tight resource on a runner
 
 echo "== Vector tiles =="
@@ -49,5 +50,6 @@ rm -rf build/vector-sources
 echo "== Packaging =="
 "$TOOLBOX" python3 scripts/make_pack_json.py
 "$TOOLBOX" python3 scripts/validate_pack.py "build/$SLUG-v$PACK_VERSION.zip" build/dgm5/txt
+"$TOOLBOX" python3 scripts/validate_roads.py "build/$SLUG-roads-v$PACK_VERSION.zip" "build/$SLUG-v$PACK_VERSION.zip"
 
-echo "Built build/$SLUG-v$PACK_VERSION.zip"
+echo "Built build/$SLUG-v$PACK_VERSION.zip and build/$SLUG-roads-v$PACK_VERSION.zip"
