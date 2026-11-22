@@ -61,10 +61,10 @@
     {
       "slug": "ffb",
       "name": "Landkreis Fürstenfeldbruck",
-      "version": 5,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ffb-v5/ffb-v5.zip",
-      "sizeBytes": 67270078,
-      "sha256": "3010341273b3dfbcceaa1982b8cab6adce222ba3852f8fe9f9f345cc84d25430",
+      "version": 6,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ffb-v6/ffb-v6.zip",
+      "sizeBytes": 67299598,
+      "sha256": "bd896d726116700dbb7655d5af6aac365baeb83db819d520ead6aeda45d3a142",
       "bounds": {
         "west": 10.9526842,
         "south": 48.0607298,
@@ -74,7 +74,7 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/ffb.geojson",
       "minZoom": 0,
       "maxZoom": 15,
-      "builtAt": "2026-10-30T10:45:39Z",
+      "builtAt": "2026-11-22T20:54:26Z",
       "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
     },
     {
