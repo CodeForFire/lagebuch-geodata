@@ -4,10 +4,10 @@
     {
       "slug": "aic",
       "name": "Landkreis Aichach-Friedberg",
-      "version": 5,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/aic-v5/aic-v5.zip",
-      "sizeBytes": 114239171,
-      "sha256": "318ca111a307daa76ce6bd8e7bc54ffe2ff1c287b2249c72d0296430eae1f053",
+      "version": 6,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/aic-v6/aic-v6.zip",
+      "sizeBytes": 114252461,
+      "sha256": "1f5b871a14d32ee9a55d4722ab5466ae94fc8383b8b31ae14a0443cc5c8f603a",
       "bounds": {
         "west": 10.8235042,
         "south": 48.1647818,
@@ -17,8 +17,13 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/aic.geojson",
       "minZoom": 0,
       "maxZoom": 15,
-      "builtAt": "2026-10-30T10:24:09Z",
-      "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
+      "builtAt": "2026-11-23T22:01:04Z",
+      "attribution": "Karte, Wasserentnahmestellen, Adressen, Straßennetz: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0).",
+      "roads": {
+        "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/aic-v6/aic-roads-v6.zip",
+        "sizeBytes": 18801682,
+        "sha256": "0c34c05166c698458dd498969e07e85057d8fdbb6e8f96b2ae412da14e16d536"
+      }
     },
     {
       "slug": "dah",
