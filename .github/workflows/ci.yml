@@ -41,6 +41,12 @@ jobs:
               assert pack["slug"] in sources, pack["slug"]
               for key in ("downloadUrl", "sizeBytes", "sha256", "bounds", "boundaryUrl", "version"):
                   assert key in pack, (pack["slug"], key)
+              # The road graph is optional: packs built before it existed have none.
+              if "roads" in pack:
+                  roads = pack["roads"]
+                  assert roads["downloadUrl"].startswith("https://"), pack["slug"]
+                  assert isinstance(roads["sizeBytes"], int) and roads["sizeBytes"] > 0, pack["slug"]
+                  assert len(roads["sha256"]) == 64, pack["slug"]
           print(f"packs.json: {len(data['packs'])} packs")
           PY
 
@@ -59,6 +65,9 @@ jobs:
         run: |
           scripts/toolbox.sh sh -c 'gdalinfo --version && osmium --version | head -1 && zip -v | head -2 && python3 -c "from osgeo import gdal, ogr, osr; print(ogr.GetGEOSVersionMajor())"'
           scripts/toolbox.sh gdalinfo --formats | grep -E '^ *(COG|XYZ) '
+      # The GeoPackage writer needs GDAL, so its test only runs here.
+      - name: Road graph tests in the toolbox
+        run: scripts/toolbox.sh python3 -m unittest tests.test_road_graph -v
 
   # Builds the vector tiles image the same way, so a Dependabot bump of the
   # Maven or JRE base, or a profile bump whose code no longer takes the

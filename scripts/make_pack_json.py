@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Write build/pack/pack.json and build/pack/ATTRIBUTION.md, then zip the pack.
+"""Write build/pack/pack.json and build/pack/ATTRIBUTION.md, then zip the pack and the road graph.
 
 Runs in the toolbox image (reads the elevation extent through GDAL). Env: SLUG,
 NAME, PACK_VERSION. Bounds come from the data itself, never from input, so the
 manifest cannot disagree with the files.
 
-Writes build/<slug>-v<version>.zip, holding exactly the files in PACK_FILES.
+Writes build/<slug>-v<version>.zip, holding exactly the files in PACK_FILES,
+and build/<slug>-roads-v<version>.zip, holding exactly ROADS_FILES.
 """
 import hashlib
 import json
@@ -28,7 +29,12 @@ DATA_FILES = ("map.pmtiles", "elevation.tif", "water.geojson", "addresses.sqlite
 # The same simplified area the manifest's boundaryUrl serves, so a pack carries its own.
 BOUNDARY_SOURCE = os.path.join(BUILD_DIR, "area_simple.geojson")
 PACK_FILES = DATA_FILES + ("pack.json", "ATTRIBUTION.md")
-TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "templates", "ATTRIBUTION.md")
+TEMPLATES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "templates")
+TEMPLATE = os.path.join(TEMPLATES, "ATTRIBUTION.md")
+ROADS_DIR = os.path.join(BUILD_DIR, "roads")
+ROADS_DATA_FILES = ("roads.gpkg",)
+ROADS_FILES = ROADS_DATA_FILES + ("roads.json", "ATTRIBUTION.md")
+ROADS_TEMPLATE = os.path.join(TEMPLATES, "ATTRIBUTION-roads.md")
 
 
 def sha256(path: str) -> str:
@@ -67,6 +73,52 @@ def elevation_extent(path: str) -> dict:
     }
 
 
+def file_entries(directory: str, names: tuple) -> dict:
+    return {
+        f: {"bytes": os.path.getsize(os.path.join(directory, f)), "sha256": sha256(os.path.join(directory, f))}
+        for f in names
+    }
+
+
+def attribution(template: str, name: str, osm_timestamp: str) -> str:
+    with open(template, encoding="utf-8") as f:
+        return f.read().replace("{{NAME}}", name).replace("{{OSM_TIMESTAMP}}", osm_timestamp or "unbekannt")
+
+
+def write_roads_zip(slug: str, name: str, version: int, built_at: str, bounds: dict, osm_timestamp: str) -> str:
+    """roads.json and ATTRIBUTION.md next to roads.gpkg, then the road graph's own zip."""
+    for leftover in os.listdir(ROADS_DIR):
+        if leftover not in ROADS_DATA_FILES:
+            os.remove(os.path.join(ROADS_DIR, leftover))
+    with open(os.path.join(BUILD_DIR, "roads_stats.json"), encoding="utf-8") as f:
+        counts = json.load(f)
+    roads = {
+        "formatVersion": FORMAT_VERSION,
+        "slug": slug,
+        "name": name,
+        "version": version,
+        "builtAt": built_at,
+        "bounds": bounds,
+        "graph": {"nodes": counts["nodes"], "edges": counts["edges"]},
+        "sources": {"osm": {"extractTimestamp": osm_timestamp, "licence": "ODbL-1.0"}},
+        "files": file_entries(ROADS_DIR, ROADS_DATA_FILES),
+    }
+    with open(os.path.join(ROADS_DIR, "roads.json"), "w", encoding="utf-8") as f:
+        json.dump(roads, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    with open(os.path.join(ROADS_DIR, "ATTRIBUTION.md"), "w", encoding="utf-8") as f:
+        f.write(attribution(ROADS_TEMPLATE, name, osm_timestamp))
+
+    zip_path = os.path.join(BUILD_DIR, f"{slug}-roads-v{version}.zip")
+    if os.path.exists(zip_path):
+        os.remove(zip_path)
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for f in ROADS_FILES:
+            archive.write(os.path.join(ROADS_DIR, f), arcname=f)
+    print(f"Wrote {zip_path} ({os.path.getsize(zip_path) / 1e6:.1f} MB)")
+    return zip_path
+
+
 def main() -> int:
     slug = os.environ["SLUG"]
     name = os.environ["NAME"]
@@ -88,13 +140,14 @@ def main() -> int:
     with open(os.path.join(BUILD_DIR, "region.json"), encoding="utf-8") as f:
         region = json.load(f)
     osm_timestamp = os.environ.get("OSM_TIMESTAMP", "")
+    built_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
     pack = {
         "formatVersion": FORMAT_VERSION,
         "slug": slug,
         "name": name,
         "version": version,
-        "builtAt": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "builtAt": built_at,
         "relationId": region["relationId"],
         "bounds": bounds,
         "vectorMap": vector,
@@ -108,19 +161,14 @@ def main() -> int:
                 "licence": "CC-BY-4.0",
             },
         },
-        "files": {
-            f: {"bytes": os.path.getsize(os.path.join(PACK_DIR, f)), "sha256": sha256(os.path.join(PACK_DIR, f))}
-            for f in DATA_FILES
-        },
+        "files": file_entries(PACK_DIR, DATA_FILES),
     }
     with open(os.path.join(PACK_DIR, "pack.json"), "w", encoding="utf-8") as f:
         json.dump(pack, f, indent=2, ensure_ascii=False)
         f.write("\n")
 
-    with open(TEMPLATE, encoding="utf-8") as f:
-        attribution = f.read().replace("{{NAME}}", name).replace("{{OSM_TIMESTAMP}}", osm_timestamp or "unbekannt")
     with open(os.path.join(PACK_DIR, "ATTRIBUTION.md"), "w", encoding="utf-8") as f:
-        f.write(attribution)
+        f.write(attribution(TEMPLATE, name, osm_timestamp))
 
     zip_path = os.path.join(BUILD_DIR, f"{slug}-v{version}.zip")
     if os.path.exists(zip_path):
@@ -137,6 +185,7 @@ def main() -> int:
             )
     shutil.copyfile(os.path.join(PACK_DIR, "pack.json"), os.path.join(BUILD_DIR, "pack.json"))
     print(f"Wrote {zip_path} ({os.path.getsize(zip_path) / 1e6:.1f} MB)")
+    write_roads_zip(slug, name, version, built_at, bounds, osm_timestamp)
     return 0
 
 

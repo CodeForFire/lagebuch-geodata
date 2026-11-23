@@ -154,13 +154,16 @@ jobs:
       - name: Attest build provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-path: ${{ steps.manifest.outputs.zip }}
+          subject-path: |
+            ${{ steps.manifest.outputs.zip }}
+            ${{ steps.manifest.outputs.roads_zip }}
 
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.manifest.outputs.tag }}
           ZIP: ${{ steps.manifest.outputs.zip }}
+          ROADS_ZIP: ${{ steps.manifest.outputs.roads_zip }}
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
@@ -168,14 +171,16 @@ jobs:
           {
             echo "Built from OSM relation $RELATION_ID."
             echo
-            echo "- Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL)"
+            echo "- Karte, Wasserentnahmestellen, Adressen, Straßennetz: © OpenStreetMap-Mitwirkende (ODbL)"
             echo "- Höhen: DGM5 © Bayerische Vermessungsverwaltung, www.geodaten.bayern.de (CC BY 4.0)"
+            echo
+            echo "\`$(basename "$ROADS_ZIP")\` is the optional road graph for offline routing, built from the same OSM extract."
             echo
             echo '```json'
             cat build/pack.json
             echo '```'
           } > release_notes.md
-          gh release create "$TAG" "$ZIP" --repo "$GITHUB_REPOSITORY" \
+          gh release create "$TAG" "$ZIP" "$ROADS_ZIP" --repo "$GITHUB_REPOSITORY" \
             --title "$NAME ($TAG)" --notes-file release_notes.md
 
       - name: Commit manifest

@@ -6,7 +6,7 @@
 
 Env: SLUG, RELATION_ID (upsert), GITHUB_REPOSITORY (owner/repo, set in Actions).
 upsert also copies build/area_simple.geojson to boundaries/<slug>.geojson and
-writes version/tag/branch to GITHUB_OUTPUT.
+writes version/tag/branch/zip/roads_zip to GITHUB_OUTPUT.
 
 Everything in an entry is read from the built pack, never typed in, so the
 manifest cannot disagree with the data.
@@ -23,7 +23,7 @@ SOURCES = "pack-sources.json"
 FORMAT_VERSION = 2
 SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 ATTRIBUTION = (
-    "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). "
+    "Karte, Wasserentnahmestellen, Adressen, Straßennetz: © OpenStreetMap-Mitwirkende (ODbL). "
     "Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
 )
 
@@ -74,6 +74,10 @@ def upsert(slug: str, relation_id: str, repo: str) -> dict:
     tag = f"{slug}-v{version}"
     zip_name = f"{tag}.zip"
     zip_path = os.path.join("build", zip_name)
+    roads_name = f"{slug}-roads-v{version}.zip"
+    roads_path = os.path.join("build", roads_name)
+    if not os.path.exists(roads_path):
+        raise SystemExit(f"build/{roads_name} is missing")
 
     os.makedirs("boundaries", exist_ok=True)
     shutil.copyfile(os.path.join("build", "area_simple.geojson"), os.path.join("boundaries", f"{slug}.geojson"))
@@ -91,6 +95,12 @@ def upsert(slug: str, relation_id: str, repo: str) -> dict:
         "maxZoom": pack["vectorMap"]["maxZoom"],
         "builtAt": pack["builtAt"],
         "attribution": ATTRIBUTION,
+        # The optional road graph download, from the same build (FORMAT.md, "The road graph").
+        "roads": {
+            "downloadUrl": f"https://github.com/{repo}/releases/download/{tag}/{roads_name}",
+            "sizeBytes": os.path.getsize(roads_path),
+            "sha256": sha256(roads_path),
+        },
     }
 
     data = manifest()
@@ -100,7 +110,7 @@ def upsert(slug: str, relation_id: str, repo: str) -> dict:
     sources = load(SOURCES, {})
     sources[slug] = {"relationId": relation_id}
     save(SOURCES, dict(sorted(sources.items())))
-    return {"version": version, "tag": tag, "branch": f"pack/{tag}", "zip": zip_path}
+    return {"version": version, "tag": tag, "branch": f"pack/{tag}", "zip": zip_path, "roads_zip": roads_path}
 
 
 def main() -> int:

@@ -11,12 +11,16 @@ fire-brigade incident log, one per Landkreis in Bayern. A pack holds:
 - every address, for finding a location without a network (`addresses.sqlite`);
 - the pack's own area, within which all of the above is complete (`boundary.geojson`).
 
+Next to each pack, the same release holds an optional road graph
+(`<slug>-roads-v<N>.zip`, a GeoPackage). With it, an app routes offline to a
+hydrant along streets and footways, on foot or by vehicle.
+
 Each pack covers its Landkreis's real boundary plus 3 km, so an Einsatz just
 across the border still fits.
 
 **[FORMAT.md](FORMAT.md)** is the contract the app reads, and documents every
 file. All of them are open standards (PMTiles, Cloud Optimized GeoTIFF,
-GeoJSON, SQLite) that QGIS opens as they are.
+GeoJSON, SQLite, GeoPackage) that QGIS opens as they are.
 
 The app fetches [`packs.json`](packs.json). Each entry points at a GitHub
 Release asset and carries its SHA-256, and every release has a build provenance
@@ -51,7 +55,9 @@ SLUG=ffb NAME="Landkreis Fürstenfeldbruck" RELATION_ID=62595 scripts/run_build.
    publisher's SHA-256. GDAL converts them to a COG and cuts it to the area,
    without resampling.
 3. **OSM.** The Geofabrik extract is clipped to the area with osmium.
-   Water points and addresses are exported from it.
+   Water points and addresses are exported from it. So is the road network,
+   as a routable graph (`roads.gpkg`, [`scripts/road_graph.py`](scripts/road_graph.py)).
+   It is released next to the pack as the optional `<slug>-roads-v<N>.zip`.
 4. **Vector map.** [Planetiler](https://github.com/onthegomap/planetiler) builds
    PMTiles with the Protomaps basemap profile, compiled from a pinned commit
    and patched to keep German as the only translated name, and to keep the
@@ -62,14 +68,16 @@ SLUG=ffb NAME="Landkreis Fürstenfeldbruck" RELATION_ID=62595 scripts/run_build.
    polygons, and landcover. They are downloaded (2.4 GB, cached for a month
    in CI) and cut to the area before Planetiler sees them, and every geometry
    is cut to the area exactly.
-5. **Check.** [`scripts/validate_pack.py`](scripts/validate_pack.py) checks
-   every file against FORMAT.md. That includes comparing the elevation with
+5. **Check.** [`scripts/validate_pack.py`](scripts/validate_pack.py) and
+   [`scripts/validate_roads.py`](scripts/validate_roads.py) check every file
+   against FORMAT.md. That includes comparing the elevation with
    DGM5's own values at a few thousand sampled cells. A pack that fails is never released.
 
 ## Licences
 
 - Code in this repository: [MIT](LICENSE).
-- `map.pmtiles`, `water.geojson`, `addresses.sqlite`: © [OpenStreetMap](https://www.openstreetmap.org/copyright)
+- `map.pmtiles`, `water.geojson`, `addresses.sqlite` and the road graph
+  `roads.gpkg`: © [OpenStreetMap](https://www.openstreetmap.org/copyright)
   contributors. These are derived databases under the ODbL 1.0, so
   share-alike applies.
 - Elevation: DGM5 © Bayerische Vermessungsverwaltung,
