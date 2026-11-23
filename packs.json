@@ -47,10 +47,10 @@
     {
       "slug": "ed",
       "name": "Landkreis Erding ",
-      "version": 1,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ed-v1/ed-v1.zip",
-      "sizeBytes": 111480436,
-      "sha256": "ce913c9e6580dbe17008a528bccd45b28770a0346180aa8ba8eaf942b025b843",
+      "version": 2,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ed-v2/ed-v2.zip",
+      "sizeBytes": 111483192,
+      "sha256": "6becfeb9f187dddb1e785c1a6f14ecd022f14e3437ed99ec1a579dd81c9f4b5f",
       "bounds": {
         "west": 11.6907604,
         "south": 48.1127109,
@@ -60,8 +60,13 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/ed.geojson",
       "minZoom": 0,
       "maxZoom": 15,
-      "builtAt": "2026-11-09T20:21:21Z",
-      "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
+      "builtAt": "2026-11-23T22:03:26Z",
+      "attribution": "Karte, Wasserentnahmestellen, Adressen, Straßennetz: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0).",
+      "roads": {
+        "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ed-v2/ed-roads-v2.zip",
+        "sizeBytes": 12090249,
+        "sha256": "7eda4690e84a807b3ca44335e2b4879cc3d97efb671c8aa71ad5973072bd2648"
+      }
     },
     {
       "slug": "ffb",
