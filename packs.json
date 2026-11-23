@@ -23,10 +23,10 @@
     {
       "slug": "dah",
       "name": "Landkreis Dachau",
-      "version": 5,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/dah-v5/dah-v5.zip",
-      "sizeBytes": 87838123,
-      "sha256": "1d892715cdad2ec9412a8e9ddc0918b25f425c5d2e3126fd9e2bd0f872cba779",
+      "version": 6,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/dah-v6/dah-v6.zip",
+      "sizeBytes": 87895678,
+      "sha256": "c97ea4274fbeb0a75882d08cac4facfd02b87e51aaa555593ae6ab81297a9398",
       "bounds": {
         "west": 11.0694606,
         "south": 48.174158,
@@ -36,8 +36,13 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/dah.geojson",
       "minZoom": 0,
       "maxZoom": 15,
-      "builtAt": "2026-10-30T10:35:11Z",
-      "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
+      "builtAt": "2026-11-23T21:32:50Z",
+      "attribution": "Karte, Wasserentnahmestellen, Adressen, Straßennetz: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0).",
+      "roads": {
+        "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/dah-v6/dah-roads-v6.zip",
+        "sizeBytes": 14790704,
+        "sha256": "811c0af78cd36b9a68d5be16227108baa533d9864df901e92562dfc8f1148859"
+      }
     },
     {
       "slug": "ed",
