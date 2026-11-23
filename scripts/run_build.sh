@@ -33,15 +33,38 @@ echo "== Elevation (DGM5) =="
 echo "== OSM extract =="
 EXTRACT_PATH="$(python3 scripts/resolve_geofabrik_extract.py)"
 echo "Using $EXTRACT_PATH"
-# --retry alone does not retry a failed connection (curl exit 7), which is how
-# a short Geofabrik outage shows up; --retry-all-errors covers it.
-curl -fsSL --connect-timeout 30 --retry 5 --retry-delay 30 --retry-all-errors \
-  "https://download.geofabrik.de/europe/germany/$EXTRACT_PATH" -o build/state.osm.pbf
-OSM_TIMESTAMP="$("$TOOLBOX" osmium fileinfo -g header.option.osmosis_replication_timestamp build/state.osm.pbf)"
+# CI restores the day's extract into build/osm-extract from the Actions cache,
+# so a refresh downloads it once instead of once per pack; Geofabrik refuses
+# runners that download too often. Without a cached copy it is fetched here.
+OSM_DIR=build/osm-extract
+EXTRACT="$OSM_DIR/${EXTRACT_PATH//\//-}"
+mkdir -p "$OSM_DIR"
+if [ -s "$EXTRACT" ]; then
+  echo "Have $EXTRACT"
+else
+  # --retry alone does not retry a failed connection (curl exit 7);
+  # --retry-all-errors covers it.
+  curl -fsSL --connect-timeout 30 --retry 5 --retry-delay 30 --retry-all-errors \
+    "https://download.geofabrik.de/europe/germany/$EXTRACT_PATH" -o "$EXTRACT.part"
+  mv "$EXTRACT.part" "$EXTRACT"
+fi
+# A file osmium cannot read must not be saved to the cache for the next pack.
+if ! OSM_TIMESTAMP="$("$TOOLBOX" osmium fileinfo -g header.option.osmosis_replication_timestamp "$EXTRACT")"; then
+  rm -f "$EXTRACT"
+  echo "::error::$EXTRACT is not a readable OSM file" >&2
+  exit 1
+fi
 export OSM_TIMESTAMP
+mv "$EXTRACT" build/state.osm.pbf
 "$TOOLBOX" bash scripts/build_osm_layers.sh
 "$TOOLBOX" bash scripts/build_road_graph.sh
-rm -f build/state.osm.pbf # free disk, the tight resource on a runner
+# Free disk, the tight resource on a runner. When CI still has to save the
+# extract to the cache (KEEP_OSM_EXTRACT=1), it is kept for that step.
+if [ "${KEEP_OSM_EXTRACT:-0}" = 1 ]; then
+  mv build/state.osm.pbf "$EXTRACT"
+else
+  rm -f build/state.osm.pbf
+fi
 
 echo "== Vector tiles =="
 bash scripts/fetch_vector_sources.sh
