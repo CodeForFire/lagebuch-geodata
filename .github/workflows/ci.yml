@@ -64,10 +64,10 @@ jobs:
       - name: Build toolbox and check its tools
         run: |
           scripts/toolbox.sh sh -c 'gdalinfo --version && osmium --version | head -1 && zip -v | head -2 && python3 -c "from osgeo import gdal, ogr, osr; print(ogr.GetGEOSVersionMajor())"'
+          scripts/toolbox.sh gdalinfo --formats | grep -E '^ *(COG|XYZ) '
       # The GeoPackage writer needs GDAL, so its test only runs here.
       - name: Road graph tests in the toolbox
         run: scripts/toolbox.sh python3 -m unittest tests.test_road_graph -v
-          scripts/toolbox.sh gdalinfo --formats | grep -E '^ *(COG|XYZ) '
 
   # Builds the vector tiles image the same way, so a Dependabot bump of the
   # Maven or JRE base, or a profile bump whose code no longer takes the
