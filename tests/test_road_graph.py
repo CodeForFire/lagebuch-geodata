@@ -269,6 +269,14 @@ class ValidatorBoundary(unittest.TestCase):
         self.assertTrue(validate_roads.near_area(area, [(just_off, 48.0), (just_off + 0.01, 48.0)], 50))
         self.assertFalse(validate_roads.near_area(area, [(11.01, 48.0), (11.02, 48.0)], 50))
 
+    def test_an_edge_whose_middle_passes_near_the_boundary_is_accepted(self):
+        import validate_roads
+
+        box = road_graph.Area({"type": "Polygon", "coordinates": [[[11, 48], [11.002, 48], [11.002, 48.002], [11, 48.002], [11, 48]]]})
+        # About 10 m south of the box; both ends lie more than 50 m from it.
+        self.assertTrue(validate_roads.near_area(box, [(10.999, 47.99991), (11.003, 47.99991)], 50))
+        self.assertFalse(validate_roads.near_area(box, [(10.999, 47.999), (11.003, 47.999)], 50))  # ~111 m
+
 
 if __name__ == "__main__":
     unittest.main()

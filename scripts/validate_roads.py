@@ -126,10 +126,16 @@ def near_area(area: Area, coords: list, tolerance_m: float) -> bool:
     """Whether the line touches the area, or passes within tolerance_m of its boundary."""
     if area.touches(coords):
         return True
+    # Segments that do not cross lie closest at an end point of one of them, so
+    # the four end-point distances cover a segment whose middle passes near.
     dlat = tolerance_m / 111_000
-    for p in coords:
-        for x0, y0, x1, y1 in area.candidates(p[1] - dlat, p[1] + dlat):
-            if segment_distance_m(p, (x0, y0), (x1, y1)) <= tolerance_m:
+    for a, b in zip(coords, coords[1:]):
+        for x0, y0, x1, y1 in area.candidates(min(a[1], b[1]) - dlat, max(a[1], b[1]) + dlat):
+            c, d = (x0, y0), (x1, y1)
+            if min(
+                segment_distance_m(a, c, d), segment_distance_m(b, c, d),
+                segment_distance_m(c, a, b), segment_distance_m(d, a, b),
+            ) <= tolerance_m:
                 return True
     return False
 
