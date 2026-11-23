@@ -33,7 +33,10 @@ echo "== Elevation (DGM5) =="
 echo "== OSM extract =="
 EXTRACT_PATH="$(python3 scripts/resolve_geofabrik_extract.py)"
 echo "Using $EXTRACT_PATH"
-curl -fsSL --retry 3 "https://download.geofabrik.de/europe/germany/$EXTRACT_PATH" -o build/state.osm.pbf
+# --retry alone does not retry a failed connection (curl exit 7), which is how
+# a short Geofabrik outage shows up; --retry-all-errors covers it.
+curl -fsSL --connect-timeout 30 --retry 5 --retry-delay 30 --retry-all-errors \
+  "https://download.geofabrik.de/europe/germany/$EXTRACT_PATH" -o build/state.osm.pbf
 OSM_TIMESTAMP="$("$TOOLBOX" osmium fileinfo -g header.option.osmosis_replication_timestamp build/state.osm.pbf)"
 export OSM_TIMESTAMP
 "$TOOLBOX" bash scripts/build_osm_layers.sh
