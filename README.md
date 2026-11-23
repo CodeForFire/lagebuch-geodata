@@ -54,7 +54,8 @@ SLUG=ffb NAME="Landkreis Fürstenfeldbruck" RELATION_ID=62595 scripts/run_build.
    Bayern's open-data Metalink, and each download is checked against the
    publisher's SHA-256. GDAL converts them to a COG and cuts it to the area,
    without resampling.
-3. **OSM.** The Geofabrik extract is clipped to the area with osmium.
+3. **OSM.** The Geofabrik extract is clipped to the area with osmium. In CI it
+   is downloaded once per day and shared by every pack built that day.
    Water points and addresses are exported from it. So is the road network,
    as a routable graph (`roads.gpkg`, [`scripts/road_graph.py`](scripts/road_graph.py)).
    It is released next to the pack as the optional `<slug>-roads-v<N>.zip`.

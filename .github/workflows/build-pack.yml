@@ -89,11 +89,37 @@ jobs:
           path: build/vector-sources/raw
           key: ${{ steps.vector-cache.outputs.cache-primary-key }}
 
+      # The Geofabrik extract (about 800 MB for Bayern) is shared by every
+      # pack built on the same UTC day, so a refresh of all packs downloads it
+      # once. Geofabrik refuses runners that download too often. run_build.sh
+      # fetches it on a miss and keeps it for the save step below.
+      - name: OSM extract cache key
+        id: osm-key
+        run: echo "key=osm-extract-$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore OSM extract
+        id: osm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/osm-extract
+          key: ${{ steps.osm-key.outputs.key }}
+
       - name: Build pack
+        env:
+          KEEP_OSM_EXTRACT: ${{ steps.osm-cache.outputs.cache-hit != 'true' && '1' || '0' }}
         run: |
           set -o pipefail
           mkdir -p build
           bash scripts/run_build.sh 2>&1 | tee build/build_log.txt
+
+      # Also when the build fails after the road graph, the extract is back in
+      # build/osm-extract: the next pack of the day then skips the download.
+      - name: Save OSM extract
+        if: ${{ !cancelled() && steps.osm-cache.outputs.cache-hit != 'true' && hashFiles('build/osm-extract/*.osm.pbf') != '' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/osm-extract
+          key: ${{ steps.osm-cache.outputs.cache-primary-key }}
 
       # Named after the pack: a scheduled refresh builds every pack in one run,
       # and a download by a shared name can hand one pack's publish job
