@@ -123,10 +123,10 @@
     {
       "slug": "muenchen",
       "name": "Landeshauptstadt München",
-      "version": 4,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/muenchen-v4/muenchen-v4.zip",
-      "sizeBytes": 76513343,
-      "sha256": "6fac7c976dcd863a1a589a15ab490ff25efa6e7120a98137de2f5793765139b3",
+      "version": 5,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/muenchen-v5/muenchen-v5.zip",
+      "sizeBytes": 76601017,
+      "sha256": "458e2bc97a5111c3d0ab288b318364b268d997c9af946317ea4a316774a01c4f",
       "bounds": {
         "west": 11.3204562,
         "south": 48.0346446,
@@ -136,8 +136,13 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/muenchen.geojson",
       "minZoom": 0,
       "maxZoom": 15,
-      "builtAt": "2026-10-30T11:22:22Z",
-      "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
+      "builtAt": "2026-11-23T22:34:28Z",
+      "attribution": "Karte, Wasserentnahmestellen, Adressen, Straßennetz: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0).",
+      "roads": {
+        "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/muenchen-v5/muenchen-roads-v5.zip",
+        "sizeBytes": 42635277,
+        "sha256": "a94c2a0e0d970a1553a6267e632917fcc34c2b8ae33e74eab7d86196b447291b"
+      }
     },
     {
       "slug": "sta",
