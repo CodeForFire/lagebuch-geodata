@@ -19,7 +19,6 @@ import math
 import os
 import sys
 
-from osm_layers import inside
 
 BUILD_DIR = "build"
 ROADS_DIR = os.path.join(BUILD_DIR, "roads")
@@ -193,16 +192,103 @@ def line_length(coords: list) -> float:
     return sum(haversine(a, b) for a, b in zip(coords, coords[1:]))
 
 
+# --- Area ---------------------------------------------------------------------
+
+
+class Area:
+    """A (Multi)Polygon that answers "does this line touch it?" quickly.
+
+    The ring segments are bucketed into latitude bands, so a test only looks at
+    the few segments near the point instead of every vertex of the boundary.
+    Even-odd over every ring, so holes are holes, as osm_layers.inside does.
+    """
+
+    BANDS = 1024
+
+    def __init__(self, geometry: dict):
+        polygons = geometry["coordinates"] if geometry["type"] == "MultiPolygon" else [geometry["coordinates"]]
+        segments = [
+            (x0, y0, x1, y1)
+            for polygon in polygons
+            for ring in polygon
+            for (x0, y0, *_), (x1, y1, *_) in zip(ring, ring[1:])
+        ]
+        self.south = min(min(s[1], s[3]) for s in segments)
+        self.north = max(max(s[1], s[3]) for s in segments)
+        self.west = min(min(s[0], s[2]) for s in segments)
+        self.east = max(max(s[0], s[2]) for s in segments)
+        self.step = (self.north - self.south) / self.BANDS or 1.0
+        self.bands: list[list] = [[] for _ in range(self.BANDS)]
+        for seg in segments:
+            for band in range(self.band(min(seg[1], seg[3])), self.band(max(seg[1], seg[3])) + 1):
+                self.bands[band].append(seg)
+
+    def band(self, lat: float) -> int:
+        return min(self.BANDS - 1, max(0, int((lat - self.south) / self.step)))
+
+    def candidates(self, lat0: float, lat1: float):
+        """Every ring segment that may reach latitudes lat0..lat1."""
+        if lat1 < self.south or lat0 > self.north:
+            return set()
+        found = set()
+        for band in range(self.band(lat0), self.band(lat1) + 1):
+            found.update(self.bands[band])
+        return found
+
+    def inside(self, lon: float, lat: float) -> bool:
+        if not (self.south <= lat <= self.north and self.west <= lon <= self.east):
+            return False
+        hit = False
+        for x0, y0, x1, y1 in self.bands[self.band(lat)]:
+            if (y0 > lat) != (y1 > lat) and lon < x0 + (lat - y0) * (x1 - x0) / (y1 - y0):
+                hit = not hit
+        return hit
+
+    def crosses(self, a: tuple[float, float], b: tuple[float, float]) -> bool:
+        """Whether the segment a-b meets the boundary."""
+        return any(
+            segments_intersect(a, b, (x0, y0), (x1, y1))
+            for x0, y0, x1, y1 in self.candidates(min(a[1], b[1]), max(a[1], b[1]))
+        )
+
+    def touches(self, coords: list) -> bool:
+        """Whether the line has a vertex inside the area or a segment across its boundary."""
+        return any(self.inside(lon, lat) for lon, lat in coords) or any(
+            self.crosses(a, b) for a, b in zip(coords, coords[1:])
+        )
+
+
+def segments_intersect(p1, p2, q1, q2) -> bool:
+    def orient(a, b, c) -> float:
+        return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
+    def within(a, b, c) -> bool:  # c, known to be collinear with a-b, lies on a-b
+        return min(a[0], b[0]) <= c[0] <= max(a[0], b[0]) and min(a[1], b[1]) <= c[1] <= max(a[1], b[1])
+
+    d1, d2, d3, d4 = orient(q1, q2, p1), orient(q1, q2, p2), orient(p1, p2, q1), orient(p1, p2, q2)
+    if ((d1 > 0) != (d2 > 0)) and d1 != 0 and d2 != 0 and ((d3 > 0) != (d4 > 0)) and d3 != 0 and d4 != 0:
+        return True
+    return (
+        (d1 == 0 and within(q1, q2, p1)) or (d2 == 0 and within(q1, q2, p2))
+        or (d3 == 0 and within(p1, p2, q1)) or (d4 == 0 and within(p1, p2, q2))
+    )
+
+
 # --- Graph --------------------------------------------------------------------
 
 
 def build_graph(elements, area: dict) -> dict:
     """Split the ways into edges between junctions, keeping the edges that touch the area.
 
+    An edge touches the area when a vertex lies inside it or a segment crosses its
+    boundary, so an edge that cuts across a corner with every vertex outside is
+    kept too. Such an edge is kept whole, on to its next node.
+
     Returns {"nodes": [...], "edges": [...]} with dense ids starting at 1: a node
     is {id, osm, lon, lat, barrier, drive_blocked}; an edge is {id, from_node,
     to_node, coords, length_m, osm, **way_modes}.
     """
+    area = Area(area)
     node_tags: dict[int, dict] = {}
     ways = []
     for kind, osm_id, tags, payload in elements:
@@ -230,7 +316,7 @@ def build_graph(elements, area: dict) -> dict:
                 if i == len(run) - 1 or passes[ref] > 1 or ref in node_tags:
                     piece = run[start : i + 1]
                     coords = [loc for _, loc in piece]
-                    if any(inside(area, lon, lat) for lon, lat in coords):
+                    if area.touches(coords):
                         raw_edges.append((way_id, piece[0][0], ref, coords, modes))
                     start = i
 

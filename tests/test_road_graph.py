@@ -121,10 +121,49 @@ class Splitting(unittest.TestCase):
         self.assertEqual(sorted(e["osm"] for e in g["edges"]), ["way/1", "way/2"])
         self.assertEqual(len(g["nodes"]), 3)
 
+    def test_an_edge_that_cuts_across_the_area_with_no_vertex_inside_is_kept(self):
+        # A small square between nodes 1 and 2, which both lie outside it.
+        sliver = {"type": "Polygon", "coordinates": [[[11.0012, 47.999], [11.0018, 47.999], [11.0018, 48.001],
+                                                      [11.0012, 48.001], [11.0012, 47.999]]]}
+        g = graph(way(1, [1, 2], highway="residential"), way(2, [3, 4], highway="residential"), area=sliver)
+        self.assertEqual([e["osm"] for e in g["edges"]], ["way/1"])
+
     def test_the_length_follows_the_way(self):
         g = graph(way(1, [0, 1, 2], highway="residential"))
         # 0.002° of longitude at 48° N.
         self.assertAlmostEqual(g["edges"][0]["length_m"], 148.79, delta=0.05)
+
+
+class AreaTests(unittest.TestCase):
+    RING = [[10, 47], [12, 47], [12, 49], [10, 49], [10, 47]]
+    HOLE = [[10.5, 47.5], [11.5, 47.5], [11.5, 48.5], [10.5, 48.5], [10.5, 47.5]]
+
+    def test_inside_honours_holes_and_multipolygons(self):
+        area = road_graph.Area({"type": "MultiPolygon", "coordinates": [
+            [self.RING, self.HOLE], [[[13, 47], [14, 47], [14, 48], [13, 48], [13, 47]]]]})
+        self.assertTrue(area.inside(10.2, 48.0))
+        self.assertFalse(area.inside(11.0, 48.0))  # in the hole
+        self.assertTrue(area.inside(13.5, 47.5))
+        self.assertFalse(area.inside(12.5, 48.0))
+
+    def test_it_agrees_with_osm_layers_inside(self):
+        import random
+
+        import osm_layers
+
+        geometry = {"type": "Polygon", "coordinates": [self.RING, self.HOLE]}
+        area = road_graph.Area(geometry)
+        rng = random.Random(7)
+        for _ in range(2000):
+            lon, lat = rng.uniform(9.5, 12.5), rng.uniform(46.5, 49.5)
+            self.assertEqual(area.inside(lon, lat), osm_layers.inside(geometry, lon, lat), (lon, lat))
+
+    def test_a_line_crossing_the_boundary_touches_it(self):
+        area = road_graph.Area({"type": "Polygon", "coordinates": [self.RING]})
+        self.assertTrue(area.touches([(9.0, 48.0), (13.0, 48.0)]))  # both ends outside
+        self.assertTrue(area.touches([(11.0, 48.0), (13.0, 48.0)]))
+        self.assertFalse(area.touches([(9.0, 46.0), (13.0, 46.5)]))
+        self.assertTrue(area.touches([(12.0, 46.0), (12.0, 50.0)]))  # along the edge
 
 
 class Modes(unittest.TestCase):
@@ -213,6 +252,22 @@ class GeoPackage(unittest.TestCase):
             self.assertEqual(rows[0][3:7], ("residential", "Am Bach", 1, 1))
             self.assertEqual(rows[2][3:7], ("footway", None, 1, 0))
             self.assertEqual(validate_roads.gpkg_coords(rows[0][7]), g["edges"][0]["coords"])
+
+
+class ValidatorBoundary(unittest.TestCase):
+    def test_an_edge_runs_on_outside_as_far_as_its_next_node(self):
+        import validate_roads
+
+        area = road_graph.Area({"type": "Polygon", "coordinates": [[[10, 47], [11.01, 47], [11.01, 49], [10, 49], [10, 47]]]})
+        self.assertTrue(validate_roads.near_area(area, [(11.009, 48.0), (11.08, 48.0)], 50))
+
+    def test_an_edge_just_off_the_simplified_boundary_is_accepted(self):
+        import validate_roads
+
+        area = road_graph.Area({"type": "Polygon", "coordinates": [[[10, 47], [11, 47], [11, 49], [10, 49], [10, 47]]]})
+        just_off = 11 + 30 / (111_000 * 0.669)  # 30 m east of the boundary at 48° N
+        self.assertTrue(validate_roads.near_area(area, [(just_off, 48.0), (just_off + 0.01, 48.0)], 50))
+        self.assertFalse(validate_roads.near_area(area, [(11.01, 48.0), (11.02, 48.0)], 50))
 
 
 if __name__ == "__main__":

@@ -19,6 +19,8 @@ import sys
 import tempfile
 import zipfile
 
+from road_graph import Area
+
 FORMAT_VERSION = 2
 EXPECTED_FILES = {"roads.gpkg", "roads.json", "ATTRIBUTION.md"}
 # The cap an app also holds the download to. About twice the largest graph measured.
@@ -32,6 +34,9 @@ FLAGS = ("walk_fwd", "walk_bwd", "drive_fwd", "drive_bwd")
 SAMPLE_EDGES = 2000
 HYDRANT_RADIUS_M = 50
 MIN_HYDRANTS_NEAR = 0.95
+# boundary.geojson is simplified to ~20 m, so an edge that only grazes the exact
+# area the build clipped to may miss the simplified one by about that much.
+BOUNDARY_TOLERANCE_M = 50
 EARTH_RADIUS_M = 6371008.8
 # Envelope sizes of a GeoPackage geometry header, by the flags' envelope indicator.
 ENVELOPE_BYTES = {0: 0, 1: 32, 2: 48, 3: 48, 4: 64}
@@ -104,21 +109,33 @@ def check_zip(zip_path: str, out_dir: str) -> dict:
     return roads
 
 
-def read_pack(zip_path: str) -> tuple[dict, list]:
+def read_pack(zip_path: str) -> tuple[dict, list, dict]:
     with zipfile.ZipFile(zip_path) as archive:
         pack = json.loads(archive.read("pack.json"))
         water = json.loads(archive.read("water.geojson"))
+        boundary = json.loads(archive.read("boundary.geojson"))["geometry"]
     hydrants = [
         tuple(f["geometry"]["coordinates"][:2])
         for f in water["features"]
         if f["properties"].get("emergency") == "fire_hydrant"
     ]
-    return pack, hydrants
+    return pack, hydrants, boundary
 
 
-def check_graph(path: str, roads: dict, pack: dict, hydrants: list) -> None:
+def near_area(area: Area, coords: list, tolerance_m: float) -> bool:
+    """Whether the line touches the area, or passes within tolerance_m of its boundary."""
+    if area.touches(coords):
+        return True
+    dlat = tolerance_m / 111_000
+    for p in coords:
+        for x0, y0, x1, y1 in area.candidates(p[1] - dlat, p[1] + dlat):
+            if segment_distance_m(p, (x0, y0), (x1, y1)) <= tolerance_m:
+                return True
+    return False
+
+
+def check_graph(path: str, roads: dict, pack: dict, hydrants: list, boundary: dict) -> None:
     require(roads["slug"] == pack["slug"] and roads["version"] == pack["version"], "roads.json is for another pack")
-    b = pack["bounds"]
     with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as conn:
         require(conn.execute("PRAGMA application_id").fetchone()[0] == 0x47504B47, "roads.gpkg is not a GeoPackage")
         contents = dict(conn.execute("SELECT table_name, data_type FROM gpkg_contents"))
@@ -149,18 +166,15 @@ def check_graph(path: str, roads: dict, pack: dict, hydrants: list) -> None:
             conn.execute("SELECT COUNT(*) FROM edges WHERE walk_fwd + walk_bwd + drive_fwd + drive_bwd = 0").fetchone()[0] == 0,
             "an edge can be neither walked nor driven",
         )
-        outside = conn.execute(
-            "SELECT COUNT(*) FROM rtree_edges_geom WHERE minx < ? OR maxx > ? OR miny < ? OR maxy > ?",
-            (b["west"] - 0.05, b["east"] + 0.05, b["south"] - 0.05, b["north"] + 0.05),
-        ).fetchone()[0]
-        # An edge that crosses the area's edge runs on to its next junction, so it
-        # may reach a little outside; far outside means the clip failed.
-        require(outside == 0, f"{outside} edges reach far outside the pack bounds")
-
         node_at = {}
         for fid, blob in conn.execute("SELECT fid, geom FROM nodes"):
             node_at[fid] = gpkg_coords(blob)[0]
         rows = conn.execute("SELECT fid, from_node, to_node, length_m, geom FROM edges").fetchall()
+        # An edge that crosses the boundary runs on to its next node, however far
+        # outside that is; an edge that never touches the area means the clip failed.
+        area = Area(boundary)
+        away = [fid for fid, _, _, _, blob in rows if not near_area(area, gpkg_coords(blob), BOUNDARY_TOLERANCE_M)]
+        require(not away, f"{len(away)} edges do not touch the pack's area, e.g. edge {away[:5]}")
         for fid, start, end, length, blob in random.Random(42).sample(rows, min(SAMPLE_EDGES, len(rows))):
             coords = gpkg_coords(blob)
             require(len(coords) >= 2, f"edge {fid} has fewer than two vertices")
@@ -196,8 +210,8 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as out_dir:
         try:
             roads = check_zip(roads_zip, out_dir)
-            pack, hydrants = read_pack(pack_zip)
-            check_graph(os.path.join(out_dir, "roads.gpkg"), roads, pack, hydrants)
+            pack, hydrants, boundary = read_pack(pack_zip)
+            check_graph(os.path.join(out_dir, "roads.gpkg"), roads, pack, hydrants, boundary)
         except RoadsError as exc:
             print(f"::error::Road graph validation failed: {exc}", file=sys.stderr)
             return 1
