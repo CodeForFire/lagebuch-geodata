@@ -66,10 +66,10 @@
     {
       "slug": "ffb",
       "name": "Landkreis Fürstenfeldbruck",
-      "version": 6,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ffb-v6/ffb-v6.zip",
-      "sizeBytes": 67299598,
-      "sha256": "bd896d726116700dbb7655d5af6aac365baeb83db819d520ead6aeda45d3a142",
+      "version": 7,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ffb-v7/ffb-v7.zip",
+      "sizeBytes": 67299568,
+      "sha256": "993df4231bfa6770858888f59be86a3b5ee20c74c15def5b4822b563a21bc965",
       "bounds": {
         "west": 10.9526842,
         "south": 48.0607298,
@@ -79,8 +79,13 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/ffb.geojson",
       "minZoom": 0,
       "maxZoom": 15,
-      "builtAt": "2026-11-22T20:54:26Z",
-      "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
+      "builtAt": "2026-11-23T22:21:39Z",
+      "attribution": "Karte, Wasserentnahmestellen, Adressen, Straßennetz: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0).",
+      "roads": {
+        "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/ffb-v7/ffb-roads-v7.zip",
+        "sizeBytes": 15727898,
+        "sha256": "cc4e57ce1c9512cf54eb9a138aea9a4d0c8de02d96a341483052260426b77362"
+      }
     },
     {
       "slug": "lkr-muenchen",
