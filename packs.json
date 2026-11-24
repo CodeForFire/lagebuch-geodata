@@ -85,10 +85,10 @@
     {
       "slug": "lkr-muenchen",
       "name": "Landkreis München",
-      "version": 4,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/lkr-muenchen-v4/lkr-muenchen-v4.zip",
-      "sizeBytes": 119574374,
-      "sha256": "5a946ee6a113a0706437c1c0121cccba235dc7be490637c33ed8508934f59f35",
+      "version": 5,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/lkr-muenchen-v5/lkr-muenchen-v5.zip",
+      "sizeBytes": 119686832,
+      "sha256": "1b7a3bf6fb8fdbc0f7ec084cdc3cd5c321fa9896bf49261019c8bc8ab1be57f9",
       "bounds": {
         "west": 11.3448633,
         "south": 47.8889554,
@@ -98,8 +98,13 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/lkr-muenchen.geojson",
       "minZoom": 0,
       "maxZoom": 15,
-      "builtAt": "2026-10-30T10:58:32Z",
-      "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
+      "builtAt": "2026-11-24T09:22:51Z",
+      "attribution": "Karte, Wasserentnahmestellen, Adressen, Straßennetz: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0).",
+      "roads": {
+        "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/lkr-muenchen-v5/lkr-muenchen-roads-v5.zip",
+        "sizeBytes": 39712628,
+        "sha256": "d3fa5bcd2c6ef2d5b9b2aa9572f3899c4c56dbed1a976f4f1efd4e105dcfee4f"
+      }
     },
     {
       "slug": "ll",
