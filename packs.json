@@ -142,10 +142,10 @@
     {
       "slug": "sta",
       "name": "Landkreis Starnberg",
-      "version": 5,
-      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/sta-v5/sta-v5.zip",
-      "sizeBytes": 68924378,
-      "sha256": "f4cb8ebe688b3d387e2ec7c9dec48d861e619311ddd7cd835b2c359a166bf11e",
+      "version": 6,
+      "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/sta-v6/sta-v6.zip",
+      "sizeBytes": 68933880,
+      "sha256": "9ddc0136236b34fd7424873ff478d292662ccd09cf777658ee78690926129b9b",
       "bounds": {
         "west": 11.0887358,
         "south": 47.7929782,
@@ -155,8 +155,13 @@
       "boundaryUrl": "https://raw.githubusercontent.com/CodeForFire/lagebuch-geodata/main/boundaries/sta.geojson",
       "minZoom": 0,
       "maxZoom": 15,
-      "builtAt": "2026-10-30T11:32:05Z",
-      "attribution": "Karte, Wasserentnahmestellen, Adressen: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0)."
+      "builtAt": "2026-11-24T09:33:12Z",
+      "attribution": "Karte, Wasserentnahmestellen, Adressen, Straßennetz: © OpenStreetMap-Mitwirkende (ODbL). Höhen: DGM5 © Bayerische Vermessungsverwaltung (CC BY 4.0).",
+      "roads": {
+        "downloadUrl": "https://github.com/CodeForFire/lagebuch-geodata/releases/download/sta-v6/sta-roads-v6.zip",
+        "sizeBytes": 10569931,
+        "sha256": "fb7b039cf0c3a8ae923b852d7f1793695ae40510d1e3662d056184e4a5e16ad0"
+      }
     }
   ]
 }
